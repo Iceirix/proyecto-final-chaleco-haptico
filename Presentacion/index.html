@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><script>(function(){
+  function makeStore(){
+    var data = {};
+    var api = {
+      getItem: function(k){ return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+      setItem: function(k, v){ data[k] = String(v); },
+      removeItem: function(k){ delete data[k]; },
+      clear: function(){ data = {}; },
+      key: function(i){ return Object.keys(data)[i] || null; }
+    };
+    Object.defineProperty(api, 'length', { get: function(){ return Object.keys(data).length; } });
+    return api;
+  }
+  function tryShim(name){
+    var works = false;
+    try { works = !!window[name] && typeof window[name].getItem === 'function'; void window[name].length; }
+    catch (_) { works = false; }
+    if (works) return;
+    try { Object.defineProperty(window, name, { configurable: true, value: makeStore() }); }
+    catch (_) { try { window[name] = makeStore(); } catch (__) {} }
+  }
+  tryShim('localStorage');
+  tryShim('sessionStorage');
+})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avance · Chaleco Háptico + Guante de Control · Temas Selectos de Mecatrónica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* 主题:🌊 靛蓝瓷 — técnica / académica */
+    --ink:#0a1f3d;
+    --ink-rgb:10,31,61;
+    --paper:#f1f3f5;
+    --paper-rgb:241,243,245;
+    --paper-tint:#e4e8ec;
+    --ink-tint:#152a4a;
+
+    /* acento técnico cian */
+    --accent:#2dd4bf;
+    --accent-rgb:45,212,191;
+
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --serif-en:"Playfair Display","Source Serif 4",Georgia,serif;
+    --serif-body-en:"Source Serif 4",Georgia,serif;
+    --serif-zh:"Source Serif 4","Noto Serif SC",Georgia,serif;
+    --sans-zh:"Inter","Noto Sans SC",-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--paper);font-family:var(--sans-zh);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+  canvas.bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block;transition:opacity 1.2s ease}
+  canvas#bg-light{opacity:0}
+  canvas#bg-dark{opacity:1}
+  body.light-bg canvas#bg-light{opacity:1}
+  body.light-bg canvas#bg-dark{opacity:0}
+
+  #deck{position:fixed;inset:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .9s cubic-bezier(.77,0,.175,1);z-index:10;will-change:transform}
+  .slide{width:100vw;height:100vh;flex:0 0 100vw;position:relative;padding:6vh 6vw 10vh 6vw;display:flex;flex-direction:column;overflow:hidden}
+  .slide.light{color:var(--ink)}
+  .slide.dark{color:var(--paper)}
+
+  .slide::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;transition:background .7s ease}
+  .slide.light::before{background:rgba(var(--paper-rgb),.82);backdrop-filter:blur(3px)}
+  .slide.dark::before{background:rgba(var(--ink-rgb),.82);backdrop-filter:blur(3px)}
+  .slide.hero.light::before{background:rgba(var(--paper-rgb),.18);backdrop-filter:none}
+  .slide.hero.dark::before{background:rgba(var(--ink-rgb),.14);backdrop-filter:none}
+  .slide.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+  .slide.hero.light::after{background:linear-gradient(180deg,rgba(var(--paper-rgb),.32) 0%,rgba(var(--paper-rgb),0) 14%,rgba(var(--paper-rgb),0) 86%,rgba(var(--paper-rgb),.32) 100%)}
+  .slide.hero.dark::after{background:linear-gradient(180deg,rgba(var(--ink-rgb),.36) 0%,rgba(var(--ink-rgb),0) 14%,rgba(var(--ink-rgb),0) 86%,rgba(var(--ink-rgb),.36) 100%)}
+
+  .chrome{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--mono);font-size:max(11px,.78vw);letter-spacing:.2em;text-transform:uppercase;opacity:.62}
+  .chrome .left,.chrome .right{display:flex;gap:2.4em;align-items:center}
+  .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:max(11px,.78vw);letter-spacing:.18em;text-transform:uppercase;opacity:.5}
+
+  .kicker{font-family:var(--mono);font-size:max(11px,.82vw);letter-spacing:.3em;text-transform:uppercase;opacity:.62;margin-bottom:2.2vh;color:var(--accent)}
+  .slide.light .kicker{color:#0d7a6d}
+
+  em{font-style:italic;font-family:var(--serif-en)}
+
+  .frame{flex:1;display:flex;flex-direction:column;min-height:0}
+  .frame.grid-2-7-5,
+  .frame.grid-2-6-6,
+  .frame.grid-2-8-4{display:grid}
+
+  .h-hero{font-family:var(--serif-en);font-weight:800;font-size:7.4vw;line-height:1.02;letter-spacing:-.02em}
+  .h-xl{font-family:var(--serif-en);font-weight:700;font-size:5.2vw;line-height:1.08;letter-spacing:-.015em}
+  .h-sub{font-family:var(--serif-en);font-style:italic;font-weight:400;font-size:2.4vw;line-height:1.3;opacity:.7}
+  .h-md{font-family:var(--serif-en);font-weight:600;font-size:1.9vw;line-height:1.3}
+
+  .lead{font-family:var(--sans-zh);font-weight:400;font-size:max(15px,1.35vw);line-height:1.55;opacity:.86}
+  .body-sans{font-family:var(--sans-zh);font-weight:400;font-size:max(14px,1.1vw);line-height:1.65;opacity:.82}
+  .meta-row{display:flex;gap:1.2em;align-items:baseline;flex-wrap:wrap;font-family:var(--mono);font-size:max(12px,.92vw);letter-spacing:.16em;text-transform:uppercase;opacity:.6}
+
+  .grid-2-7-5{display:grid;grid-template-columns:7fr 5fr;gap:3vw 4vh;align-items:start}
+  .grid-2-6-6{display:grid;grid-template-columns:1fr 1fr;gap:3vw 4vh;align-items:start}
+  .grid-2-8-4{display:grid;grid-template-columns:8fr 4fr;gap:3vw 4vh;align-items:start}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:3vw;align-items:start}
+  .grid-4{display:grid;grid-template-columns:repeat(2,1fr);gap:3vh 3vw;align-items:start}
+
+  /* Tabla técnica */
+  .tech-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:max(10px,.78vw);line-height:1.4}
+  .tech-table th{text-align:left;font-weight:500;letter-spacing:.18em;text-transform:uppercase;opacity:.55;padding:1vh 1vw 1.2vh 0;border-bottom:1px solid currentColor;font-size:max(9px,.7vw)}
+  .tech-table td{padding:.85vh 1vw .85vh 0;border-bottom:1px solid rgba(127,127,127,.18);vertical-align:top;font-size:max(10px,.78vw)}
+  .tech-table .gpio{font-weight:600;color:var(--accent)}
+  .slide.light .tech-table .gpio{color:#0d7a6d}
+  .tech-table .note{opacity:.55;font-size:max(9px,.72vw)}
+  .tech-table .blk{font-family:var(--sans-zh);font-weight:600;letter-spacing:.04em}
+  .tech-table.compact th{padding:.5vh .4vw .6vh 0;font-size:max(8px,.62vw)}
+  .tech-table.compact td{padding:.45vh .4vw .45vh 0;font-size:max(9px,.7vw);line-height:1.25}
+  .tech-table.compact .note{font-size:max(8px,.62vw)}
+
+  /* Pin chip */
+  .pin{display:inline-block;font-family:var(--mono);font-size:max(10px,.78vw);padding:2px 8px;border:1px solid currentColor;border-radius:3px;letter-spacing:.08em;opacity:.85}
+  .pin.acc{color:var(--accent);border-color:var(--accent)}
+  .slide.light .pin.acc{color:#0d7a6d;border-color:#0d7a6d}
+
+  /* Tarjeta de bloque (arquitectura) */
+  .blkcard{padding:1.8vh 1.2vw;border:1px solid rgba(127,127,127,.35);border-radius:4px;display:flex;flex-direction:column;gap:.6vh;background:rgba(var(--paper-rgb),.04)}
+  .slide.light .blkcard{background:rgba(var(--ink-rgb),.04)}
+  .blkcard .lbl{font-family:var(--mono);font-size:max(9px,.7vw);letter-spacing:.22em;text-transform:uppercase;opacity:.55}
+  .blkcard .nm{font-family:var(--serif-en);font-weight:600;font-size:max(15px,1.3vw);line-height:1.15}
+  .blkcard .desc{font-family:var(--sans-zh);font-size:max(11px,.85vw);opacity:.7;line-height:1.45;margin-top:.2vh}
+
+  /* Flecha */
+  .arrow{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:max(11px,.85vw);opacity:.55;letter-spacing:.18em}
+  .arrow svg{width:1.4vw;height:1.4vw;stroke:currentColor;stroke-width:1.4;fill:none}
+
+  /* Bullet list compacta */
+  .ul-tech{list-style:none;display:flex;flex-direction:column;gap:1.1vh;font-family:var(--sans-zh);font-size:max(13px,1.05vw);line-height:1.5}
+  .ul-tech li{padding-left:1.6em;position:relative;opacity:.88}
+  .ul-tech li::before{content:"";position:absolute;left:0;top:.55em;width:.7em;height:1px;background:var(--accent);opacity:.9}
+  .slide.light .ul-tech li::before{background:#0d7a6d}
+  .ul-tech li b{font-family:var(--mono);font-weight:500;letter-spacing:.04em;opacity:.95}
+
+  /* Status pill */
+  .status{display:inline-flex;align-items:center;gap:.5em;font-family:var(--mono);font-size:max(10px,.78vw);letter-spacing:.1em;padding:2px 8px;border-radius:3px}
+  .status.ok{background:rgba(45,212,191,.15);color:#0d7a6d;border:1px solid rgba(45,212,191,.4)}
+  .slide.dark .status.ok{color:var(--accent)}
+  .status.pend{background:rgba(234,179,8,.12);color:#a16207;border:1px solid rgba(234,179,8,.4)}
+  .slide.dark .status.pend{color:#fbbf24}
+  .status.block{background:rgba(220,38,38,.1);color:#b91c1c;border:1px solid rgba(220,38,38,.35)}
+  .slide.dark .status.block{color:#f87171}
+
+  /* PCB image frame */
+  .frame-img{overflow:hidden;position:relative;background:rgba(0,0,0,.04);box-sizing:border-box;width:100%;border-radius:4px}
+  .slide.dark .frame-img{background:rgba(255,255,255,.04)}
+  .frame-img > img{width:100%;height:100%;object-fit:contain;object-position:center center;display:block}
+  .img-cap{display:block;margin-top:.8vh;font-family:var(--mono);font-size:max(10px,.78vw);letter-spacing:.22em;text-transform:uppercase;opacity:.6}
+
+  /* Timeline */
+  .timeline{display:flex;flex-direction:column;gap:0;margin-top:3.4vh;max-width:76vw}
+  .tl-row{display:grid;grid-template-columns:58px 1fr;gap:1.8vw;padding:1.15vh 0;border-top:1px solid rgba(127,127,127,.2);align-items:center}
+  .tl-row:last-child{border-bottom:1px solid rgba(127,127,127,.2)}
+  .tl-row .num{font-family:var(--serif-en);font-style:italic;font-size:max(15px,1.3vw);font-weight:500;opacity:.5}
+  .tl-row .txt{font-family:var(--sans-zh);font-size:max(11px,.95vw);line-height:1.4}
+  .tl-row .txt b{font-weight:600;letter-spacing:.01em}
+
+  .pinout-layout{display:grid;grid-template-columns:minmax(0,3.65fr) minmax(0,6.35fr);gap:2vw;align-items:start;flex:1;min-height:0;overflow:hidden}
+  .pinout-table-single .tech-table.compact th{padding:.42vh .32vw .48vh 0;font-size:max(7.6px,.6vw)}
+  .pinout-table-single .tech-table.compact td{padding:.38vh .32vw .38vh 0;font-size:max(8.8px,.68vw);line-height:1.18}
+  .pinout-img{height:65.5vh;margin:0;background:rgba(10,31,61,.03);display:flex;align-items:center;justify-content:center}
+  .pinout-img > img{height:100%}
+
+  .decision-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.6vw 1.4vw;margin-top:1.2vh}
+  .decision-grid .blkcard{min-height:17vh;padding:2vh 1.3vw}
+  .decision-grid .blkcard .desc{font-size:max(13px,1vw);line-height:1.45;opacity:.82}
+
+  .protocol-layout{display:grid;grid-template-columns:4.9fr 5.1fr;gap:2.4vw;align-items:start;padding-top:4.4vh}
+  .protocol-flow{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:1.6vw;margin-top:3vh}
+  .protocol-strip{padding:2vh 1.6vw;border-left:3px solid var(--accent);background:rgba(45,212,191,.08)}
+  .protocol-strip .lbl{font-family:var(--mono);font-size:max(10px,.78vw);letter-spacing:.22em;text-transform:uppercase;opacity:.7;margin-bottom:.8vh}
+
+  .status-slide{padding-top:3.8vh}
+  .status-slide .h-xl{font-size:4.35vw;line-height:1.04;margin-bottom:2vh}
+  .status-slide .lead{font-size:max(14px,1.12vw);line-height:1.45;margin-bottom:2.4vh}
+  .status-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1.6vw;align-items:stretch}
+  .status-cards .blkcard{min-height:16vh;padding:1.5vh 1.3vw}
+  .status-cards .blkcard .desc{font-size:max(11px,.86vw);line-height:1.35}
+  .status-table{margin-top:2.2vh;font-size:max(10px,.82vw)}
+  .status-table th{padding:.55vh 1vw .65vh 0}
+  .status-table td{padding:.48vh 1vw .48vh 0}
+
+  .ico{width:1em;height:1em;display:inline-block;vertical-align:-.12em;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+  #nav{position:fixed;left:50%;bottom:2.6vh;transform:translateX(-50%);z-index:30;display:flex;gap:10px;padding:8px 14px;border-radius:999px;background:rgba(0,0,0,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  #nav .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:all .3s ease;border:0;padding:0}
+  #nav .dot:hover{background:rgba(255,255,255,.55);transform:scale(1.15)}
+  #nav .dot.active{background:rgba(255,255,255,.95);width:22px;border-radius:999px}
+  body.light-bg #nav{background:rgba(255,255,255,.3)}
+  body.light-bg #nav .dot{background:rgba(var(--ink-rgb),.25)}
+  body.light-bg #nav .dot.active{background:rgba(var(--ink-rgb),.9)}
+  #hint{position:fixed;bottom:3vh;right:3vw;z-index:30;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.4;mix-blend-mode:difference;color:#aaa}
+</style>
+</head>
+<body>
+
+<canvas id="bg-dark" class="bg"></canvas>
+<canvas id="bg-light" class="bg"></canvas>
+<div id="hint">← → · ESC índice</div>
+
+<div id="deck">
+
+<!-- ============ 1 · Portada (hero dark) ============ -->
+<section class="slide hero dark">
+  <div class="chrome">
+    <div>UNAM · FI · Temas Selectos de Mecatrónica</div>
+    <div>Vol. 01 · Avance</div>
+  </div>
+  <div class="frame" style="display:grid;gap:3.6vh;align-content:center;min-height:78vh;max-width:88vw">
+    <div class="kicker">Proyecto Final · Mayo 2026</div>
+    <h1 class="h-hero">Chaleco Háptico<br>+ Guante de Control</h1>
+    <p class="h-sub" style="max-width:60vw">Sistema de inmersión háptica para videojuego FPS</p>
+    <div style="margin-top:2vh;display:grid;grid-template-columns:repeat(2,auto);gap:.7vh 4vw;font-family:var(--mono);font-size:max(11px,.88vw);letter-spacing:.1em;opacity:.78">
+      <span style="opacity:.55">Equipo</span><span>Paredes Rivera Luis Fernando</span>
+      <span></span><span>Méndez Lazos Jairo Jahziel</span>
+      <span></span><span>Barrón Méndez Héctor</span>
+      <span></span><span>Angeles García Alex Balam</span>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Avance técnico · ESP32-WROOM-32 · Unity</div>
+    <div>— Mayo 2026 —</div>
+  </div>
+</section>
+
+<!-- ============ 2 · Objetivo (light) ============ -->
+<section class="slide light">
+  <div class="chrome">
+    <div>Objetivo · Project Goal</div>
+    <div>02 / 12</div>
+  </div>
+  <div class="frame" style="padding-top:4.4vh">
+    <div class="kicker">Objetivo del proyecto</div>
+    <h2 class="h-xl" style="max-width:80vw">Inmersión háptica acoplada a un FPS en Unity.</h2>
+    <p class="lead" style="max-width:62vw;margin-top:2.4vh">El sistema integra cinco subsistemas físicos coordinados por una ESP32 y comunicados con el motor del juego vía WiFi/TCP.</p>
+
+    <div class="grid-3" style="margin-top:5vh;gap:1.6vw">
+      <div class="blkcard">
+        <div class="lbl">Entrada</div>
+        <div class="nm">Guante de control</div>
+        <div class="desc">Joysticks, IMU, flex y botones para capturar acciones del jugador.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">Retroceso</div>
+        <div class="nm">Solenoide</div>
+        <div class="desc">Simula el retroceso del arma sobre la mano al disparar.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">Salida háptica</div>
+        <div class="nm">Chaleco vibrador</div>
+        <div class="desc">Cuatro zonas de motores PWM para impactos y daño localizado.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">Estado</div>
+        <div class="nm">Barra de vida NeoPixel</div>
+        <div class="desc">Indicador físico de HP en el chaleco, sincronizado con Unity.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">Enlace</div>
+        <div class="nm">WiFi · TCP</div>
+        <div class="desc">ESP32 como Access Point. Protocolo bidireccional con Unity.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">Seguridad</div>
+        <div class="nm">Electrodos (bloqueados)</div>
+        <div class="desc">Línea de retroalimentación protegida hasta validación eléctrica.</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Slide 02 · Alcance del sistema</div>
+    <div>—</div>
+  </div>
+</section>
+
+<!-- ============ 3 · Arquitectura general (dark) ============ -->
+<section class="slide dark">
+  <div class="chrome">
+    <div>Arquitectura · System Architecture</div>
+    <div>03 / 12</div>
+  </div>
+  <div class="frame" style="padding-top:4vh">
+    <div class="kicker">Arquitectura general</div>
+    <h2 class="h-xl">ESP32 como Access Point bidireccional.</h2>
+
+    <!-- Flujo de salida del jugador -->
+    <div style="margin-top:5vh">
+      <div style="font-family:var(--mono);font-size:max(10px,.78vw);letter-spacing:.24em;text-transform:uppercase;opacity:.55;margin-bottom:1.6vh">Flujo A · Jugador → Unity</div>
+      <div style="display:grid;grid-template-columns:1fr 40px 1fr 40px 1fr 40px 1fr;gap:1vw;align-items:stretch">
+        <div class="blkcard"><div class="lbl">Físico</div><div class="nm">Jugador</div><div class="desc">Movimiento y acciones</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="blkcard"><div class="lbl">Hardware</div><div class="nm">Guante</div><div class="desc">JY1·JY2·IMU·flex·PB</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="blkcard"><div class="lbl">MCU</div><div class="nm">ESP32-WROOM</div><div class="desc">Lectura · empaquetado</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="blkcard"><div class="lbl">Enlace</div><div class="nm">WiFi · TCP :80</div><div class="desc">→ Unity (PC)</div></div>
+      </div>
+    </div>
+
+    <!-- Flujo de retorno -->
+    <div style="margin-top:4vh">
+      <div style="font-family:var(--mono);font-size:max(10px,.78vw);letter-spacing:.24em;text-transform:uppercase;opacity:.55;margin-bottom:1.6vh">Flujo B · Unity → Actuadores</div>
+      <div style="display:grid;grid-template-columns:1fr 40px 1fr 40px 2fr;gap:1vw;align-items:stretch">
+        <div class="blkcard"><div class="lbl">Juego</div><div class="nm">Unity FPS</div><div class="desc">Eventos: daño, disparo, HP</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="blkcard"><div class="lbl">MCU</div><div class="nm">ESP32-WROOM</div><div class="desc">Decodificador de comandos</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.8vw">
+          <div class="blkcard"><div class="lbl">M1–M4</div><div class="nm">Motores</div></div>
+          <div class="blkcard"><div class="lbl">SOL</div><div class="nm">Solenoide</div></div>
+          <div class="blkcard"><div class="lbl">LED2</div><div class="nm">NeoPixel</div></div>
+          <div class="blkcard"><div class="lbl">REL2</div><div class="nm">Relé / Elec.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Slide 03 · Diagrama de bloques</div>
+    <div>SSID ESP32_Chaleco · 192.175.5.1</div>
+  </div>
+</section>
+
+<!-- ============ 4 · Hardware y alimentación (light, con PCB) ============ -->
+<section class="slide light">
+  <div class="chrome">
+    <div>Hardware · Power Tree</div>
+    <div>04 / 12</div>
+  </div>
+  <div class="frame grid-2-6-6" style="padding-top:4.2vh;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:2.4vh">
+      <div>
+        <div class="kicker">Hardware y alimentación</div>
+        <h2 class="h-xl" style="font-size:4.4vw">PCB integrada, una sola fuente.</h2>
+      </div>
+      <ul class="ul-tech">
+        <li><b>ESP32-WROOM-32 DevKit · 38 pines</b> sobre PCB dedicada.</li>
+        <li><b>2 × Li-ion 3.7 V en serie</b> = bus de potencia <span class="pin acc">7.4 V</span>.</li>
+        <li>Regulador a <span class="pin acc">5 V</span> alimenta la ESP32; ésta entrega <span class="pin acc">3.3 V</span> a sensores.</li>
+        <li>Motores y solenoide se alimentan desde <span class="pin acc">7.4 V</span> conmutados con <b>TIP120</b>.</li>
+        <li>Relevadores de 5 V conmutados también con TIP120 desde la lógica.</li>
+      </ul>
+      <div style="margin-top:1vh;display:grid;grid-template-columns:repeat(3,1fr);gap:1vw">
+        <div class="blkcard"><div class="lbl">Bus</div><div class="nm">7.4 V</div><div class="desc">Solenoide · Motores · Relés</div></div>
+        <div class="blkcard"><div class="lbl">LDO</div><div class="nm">5.0 V</div><div class="desc">Vin ESP32 · NeoPixel</div></div>
+        <div class="blkcard"><div class="lbl">MCU</div><div class="nm">3.3 V</div><div class="desc">IMU · joysticks · flex</div></div>
+      </div>
+    </div>
+    <figure class="frame-img" style="aspect-ratio:4/3;max-height:62vh;background:rgba(10,31,61,.03)">
+      <img src="images/PCB.png" alt="PCB del proyecto">
+      <figcaption class="img-cap">Fig. 01 · PCB actual del sistema</figcaption>
+    </figure>
+  </div>
+  <div class="foot">
+    <div>Slide 04 · Distribución de potencia</div>
+    <div>—</div>
+  </div>
+</section>
+
+<!-- ============ 5 · Pinout real (light, tabla + esquemático) ============ -->
+<section class="slide light">
+  <div class="chrome">
+    <div>Pinout · GPIO Map</div>
+    <div>05 / 12</div>
+  </div>
+  <div class="frame" style="padding-top:2.5vh;display:flex;flex-direction:column;gap:1.2vh;height:calc(100% - 6vh)">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:2vw">
+      <div>
+        <div class="kicker">Pinout real de la PCB</div>
+        <h2 class="h-md" style="margin:.4vh 0 0">Mapa de GPIO ↔ función en firmware.</h2>
+      </div>
+      <div class="note" style="font-family:var(--mono);font-size:max(10px,.72vw);opacity:.55;text-align:right">22 señales · ESP32-WROOM-32<br>38-pin DevKit</div>
+    </div>
+    <div class="pinout-layout">
+      <div class="pinout-table-single">
+        <table class="tech-table compact">
+          <thead><tr><th>Bloque</th><th style="text-align:right">GPIO</th><th>Uso</th><th>Notas</th></tr></thead>
+          <tbody>
+            <tr><td class="blk">JY1 X</td><td class="gpio" style="text-align:right">32</td><td>Mov. X</td><td class="note">ADC</td></tr>
+            <tr><td class="blk">JY1 Y</td><td class="gpio" style="text-align:right">33</td><td>Mov. Y</td><td class="note">ADC</td></tr>
+            <tr><td class="blk">JY2 X</td><td class="gpio" style="text-align:right">34</td><td>Cámara X</td><td class="note">sólo in</td></tr>
+            <tr><td class="blk">JY2 Y</td><td class="gpio" style="text-align:right">35</td><td>Cámara Y</td><td class="note">sólo in</td></tr>
+            <tr><td class="blk">FLEX</td><td class="gpio" style="text-align:right">36</td><td>Gatillo flex</td><td class="note">sólo in</td></tr>
+            <tr><td class="blk">I2C SDA</td><td class="gpio" style="text-align:right">21</td><td>IMU SDA</td><td class="note">0x69</td></tr>
+            <tr><td class="blk">I2C SCL</td><td class="gpio" style="text-align:right">22</td><td>IMU SCL</td><td class="note">I²C</td></tr>
+            <tr><td class="blk">PB1</td><td class="gpio" style="text-align:right">13</td><td>Saltar</td><td class="note">activo↑</td></tr>
+            <tr><td class="blk">PB2</td><td class="gpio" style="text-align:right">14</td><td>Cambiar arma</td><td class="note">activo↑</td></tr>
+            <tr><td class="blk">PB3</td><td class="gpio" style="text-align:right">15</td><td>Reservado</td><td class="note">arranque</td></tr>
+            <tr><td class="blk">PB4</td><td class="gpio" style="text-align:right">16</td><td>Reservado</td><td class="note">libre</td></tr>
+            <tr><td class="blk">SOL</td><td class="gpio" style="text-align:right">0</td><td>Solenoide</td><td class="note">arranque ⚠</td></tr>
+            <tr><td class="blk">REL2</td><td class="gpio" style="text-align:right">4</td><td>Electrodos</td><td class="note">bloq. SW</td></tr>
+            <tr><td class="blk">LED2</td><td class="gpio" style="text-align:right">2</td><td>NeoPixel</td><td class="note">arranque ⚠</td></tr>
+            <tr><td class="blk">MOT2</td><td class="gpio" style="text-align:right">17</td><td>Motor Z1</td><td class="note">PWM</td></tr>
+            <tr><td class="blk">MOT3</td><td class="gpio" style="text-align:right">25</td><td>Motor Z2</td><td class="note">PWM</td></tr>
+            <tr><td class="blk">MOT4</td><td class="gpio" style="text-align:right">26</td><td>Motor Z3</td><td class="note">PWM</td></tr>
+            <tr><td class="blk">MOT5</td><td class="gpio" style="text-align:right">27</td><td>Motor Z4</td><td class="note">PWM</td></tr>
+            <tr><td class="blk">MOT6</td><td class="gpio" style="text-align:right">39</td><td>No usado</td><td class="note">sólo in</td></tr>
+            <tr><td class="blk">MOT7</td><td class="gpio" style="text-align:right">18</td><td>Disponible</td><td class="note">extra</td></tr>
+            <tr><td class="blk">MOT8</td><td class="gpio" style="text-align:right">19</td><td>Disponible</td><td class="note">extra</td></tr>
+            <tr><td class="blk">MP3 RX/TX</td><td class="gpio" style="text-align:right">9/10</td><td>No usado</td><td class="note">flash WROOM</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure class="frame-img pinout-img">
+        <img src="images/Esquematico.png" alt="Esquemático del proyecto">
+      </figure>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Slide 05 · 22 señales mapeadas</div>
+    <div>ESP32-WROOM-32 · 38-pin DevKit</div>
+  </div>
+</section>
+
+<!-- ============ 6 · Decisiones técnicas (dark) ============ -->
+<section class="slide dark">
+  <div class="chrome">
+    <div>Decisiones · Engineering Choices</div>
+    <div>06 / 12</div>
+  </div>
+  <div class="frame" style="padding-top:5vh">
+    <div class="kicker">Decisiones técnicas relevantes</div>
+    <h2 class="h-xl" style="margin-bottom:4.2vh">Trazabilidad de cada elección.</h2>
+
+    <div class="decision-grid">
+      <div class="blkcard">
+        <div class="lbl">Firmware base</div>
+        <div class="desc"><b>Reutilización de códigos previamente escritos en clase</b> como base para el firmware final.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">Entrada</div>
+        <div class="desc">El <b>disparo se calcula desde el sensor de flexión</b>, no desde un botón; permite gradiente de presión.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">Motores</div>
+        <div class="desc">Se usan <b>MOT2–MOT5</b> (GPIO 17 · 25 · 26 · 27) para evitar pines problemáticos de arranque.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">GPIO39</div>
+        <div class="desc"><b>MOT6 / GPIO39</b> queda sin uso: es <em>sólo entrada</em> en el WROOM, no puede manejar PWM.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">Seguridad</div>
+        <div class="desc">El relevador de electrodos (<span class="pin acc">REL2 · GPIO4</span>) queda <b>desactivado por software</b> hasta validar voltaje y corriente.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl">Arranque</div>
+        <div class="desc">Pines conscientes: <span class="pin">GPIO0 (SOL)</span> · <span class="pin">GPIO2 (LED2)</span> · <span class="pin">GPIO15 (PB3)</span>.</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Slide 06 · Por qué este pinout</div>
+    <div>—</div>
+  </div>
+</section>
+
+<!-- ============ 7 · Firmware actual (light) ============ -->
+<section class="slide light">
+  <div class="chrome">
+    <div>Firmware · Module Map</div>
+    <div>07 / 12</div>
+  </div>
+  <div class="frame" style="padding-top:5vh">
+    <div class="kicker">Firmware actual</div>
+    <h2 class="h-xl" style="margin-bottom:3vh">Estructura modular del sketch.</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vh 1.6vw">
+      <div class="blkcard"><div class="lbl">Entry</div><div class="nm">ChalecoHaptico.ino</div><div class="desc">setup() y loop() · orquesta módulos.</div></div>
+      <div class="blkcard"><div class="lbl">Header</div><div class="nm">HardwareConfig.h</div><div class="desc">Pinout y banderas de seguridad.</div></div>
+      <div class="blkcard"><div class="lbl">Input</div><div class="nm">Inputs.ino</div><div class="desc">Joysticks, botones y flex.</div></div>
+      <div class="blkcard"><div class="lbl">Sensor</div><div class="nm">IMU.ino</div><div class="desc">BMI160 + filtro complementario.</div></div>
+      <div class="blkcard"><div class="lbl">Network</div><div class="nm">WiFiAP.ino</div><div class="desc">Access Point + servidor TCP.</div></div>
+      <div class="blkcard"><div class="lbl">Protocol ↑</div><div class="nm">ProtocolSend</div><div class="desc">Empaquetado de estado a Unity.</div></div>
+      <div class="blkcard"><div class="lbl">Protocol ↓</div><div class="nm">ProtocolReceive</div><div class="desc">Decodifica comandos de Unity.</div></div>
+      <div class="blkcard"><div class="lbl">Output</div><div class="nm">Solenoid.ino</div><div class="desc">Pulso de retroceso temporizado.</div></div>
+      <div class="blkcard"><div class="lbl">Output</div><div class="nm">VibrationMotors.ino</div><div class="desc">Patrones PWM por zona y daño.</div></div>
+      <div class="blkcard"><div class="lbl">Output</div><div class="nm">HealthBar.ino</div><div class="desc">Vida en NeoPixel proporcional.</div></div>
+      <div class="blkcard"><div class="lbl">Safety</div><div class="nm">ElectrodeRelay.ino</div><div class="desc">Implementado pero protegido por flag.</div></div>
+      <div class="blkcard" style="border-style:dashed;opacity:.7"><div class="lbl">—</div><div class="nm">Notas</div><div class="desc">Sin RTOS · loop cooperativo · sin bloqueos.</div></div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Slide 07 · Arduino IDE · 11 archivos</div>
+    <div>—</div>
+  </div>
+</section>
+
+<!-- ============ 8 · Comunicación con Unity (hero light) ============ -->
+<section class="slide hero light">
+  <div class="chrome">
+    <div>Protocolo · ESP32 ⇄ Unity</div>
+    <div>08 / 12</div>
+  </div>
+  <div class="frame protocol-layout">
+    <div>
+      <div class="kicker">Comunicación con Unity</div>
+      <h2 class="h-xl" style="font-size:4.25vw;margin-bottom:2.8vh">Access Point + TCP plano.</h2>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:1vh 1.5vw;font-family:var(--mono);font-size:max(14px,1.12vw);letter-spacing:.02em;line-height:1.5">
+        <span style="opacity:.55">SSID</span><span><b>ESP32_Chaleco</b></span>
+        <span style="opacity:.55">IP</span><span><b>192.175.5.1</b></span>
+        <span style="opacity:.55">Puerto</span><span><b>TCP : 80</b></span>
+        <span style="opacity:.55">Modo</span><span>Soft-AP · sin router externo</span>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:var(--mono);font-size:max(10px,.78vw);letter-spacing:.22em;text-transform:uppercase;opacity:.62;margin-bottom:1.2vh">Unity → ESP32 · comandos</div>
+      <table class="tech-table">
+        <thead><tr><th>Cmd</th><th>Función</th></tr></thead>
+        <tbody>
+          <tr><td class="gpio">M1 · M2 · M3 · M4</td><td>Vibración por zona del chaleco</td></tr>
+          <tr><td class="gpio">SOL</td><td>Activar solenoide de retroceso</td></tr>
+          <tr><td class="gpio">HP</td><td>Actualizar barra de vida (NeoPixel)</td></tr>
+          <tr><td class="gpio">DMG</td><td>Disparar patrón de daño</td></tr>
+          <tr><td class="gpio">ELEC</td><td>Electrodos · <span class="status block">protegido</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="protocol-flow">
+      <div class="protocol-strip">
+        <div class="lbl">ESP32 → Unity · estado</div>
+        <div class="body-sans" style="font-size:max(15px,1.12vw)"><b>jump · shoot · changeWeapon · vrx1 · vry1 · vrx2 · vry2 · flex · roll · pitch</b></div>
+      </div>
+      <div class="protocol-strip" style="border-left-color:#0d7a6d;background:rgba(13,122,109,.08)">
+        <div class="lbl">Regla de seguridad</div>
+        <p class="body-sans" style="font-size:max(14px,1.02vw);opacity:.78;line-height:1.5">Comandos ASCII delimitados; el firmware ignora <b>ELEC</b> hasta levantar la bandera de seguridad.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Slide 08 · Protocolo</div>
+    <div>—</div>
+  </div>
+</section>
+
+<!-- ============ 9 · Estado actual (dark, tabla) ============ -->
+<section class="slide dark">
+  <div class="chrome">
+    <div>Avance · Subsystem Status</div>
+    <div>09 / 12</div>
+  </div>
+  <div class="frame status-slide">
+    <div class="kicker">Estado actual del avance</div>
+    <h2 class="h-xl">Pinout planteado; hardware sin validar.</h2>
+    <p class="lead" style="max-width:72vw;opacity:.76">El avance actual se concentra en la definición de conexiones, arquitectura de firmware y protocolo. Aún no se ha implementado ni probado físicamente el sistema completo.</p>
+
+    <div class="status-cards">
+      <div class="blkcard">
+        <div class="lbl"><span class="status ok">Planteado</span></div>
+        <div class="nm">Pinout y distribución</div>
+        <div class="desc">Mapa de GPIO para entradas, actuadores, NeoPixel, solenoide y relevador de electrodos. Sirve como base para cableado y firmware.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl"><span class="status pend">Pendiente</span></div>
+        <div class="nm">Implementación física</div>
+        <div class="desc">Falta montar, energizar y validar sensores, motores, solenoide, barra de vida e IMU sobre la PCB real.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl"><span class="status block">Protegido</span></div>
+        <div class="nm">Electrodos</div>
+        <div class="desc">La línea queda bloqueada hasta medir voltaje, corriente y comportamiento con carga equivalente.</div>
+      </div>
+    </div>
+
+    <table class="tech-table status-table">
+      <thead><tr><th>Bloque</th><th>Estado real</th><th>Siguiente validación</th></tr></thead>
+      <tbody>
+        <tr><td class="blk">Entradas del guante</td><td><span class="status ok">Pinout definido</span></td><td>Lectura serial de joysticks, botones, flex e IMU.</td></tr>
+        <tr><td class="blk">Actuadores hápticos</td><td><span class="status ok">Pines asignados</span></td><td>Prueba individual de motores, solenoide y NeoPixel sin Unity.</td></tr>
+        <tr><td class="blk">Comunicación Unity</td><td><span class="status pend">Por integrar</span></td><td>Conectar cliente TCP y verificar envío/recepción de comandos.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot">
+    <div>Slide 09 · Estado por subsistema</div>
+    <div>—</div>
+  </div>
+</section>
+
+<!-- ============ 10 · Riesgos técnicos (dark) ============ -->
+<section class="slide dark">
+  <div class="chrome">
+    <div>Riesgos · Open Issues</div>
+    <div>10 / 12</div>
+  </div>
+  <div class="frame" style="padding-top:5vh">
+    <div class="kicker">Riesgos técnicos y pendientes</div>
+    <h2 class="h-xl" style="margin-bottom:3vh">Lo que aún puede romperse.</h2>
+
+    <div class="grid-2-6-6" style="gap:2.4vh 4vw">
+      <div class="blkcard">
+        <div class="lbl"><span class="status pend">Boot risk</span></div>
+        <div class="nm">GPIO0 — Solenoide</div>
+        <div class="desc">Activo bajo en arranque; un nivel forzado puede impedir boot o entrada de programación. Pendiente validar con la PCB completa conectada.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl"><span class="status pend">Boot risk</span></div>
+        <div class="nm">GPIO2 — NeoPixel</div>
+        <div class="desc">También es pin de arranque y LED interno; pendiente verificar que no interfiera con la carga del firmware.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl"><span class="status block">Safety</span></div>
+        <div class="nm">Electrodos · validación eléctrica</div>
+        <div class="desc">Requiere medir voltaje y corriente real antes de habilitarse. Continúa bloqueado por software.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl"><span class="status pend">Calibración</span></div>
+        <div class="nm">Umbral del flex</div>
+        <div class="desc">Debe calibrarse con el guante real puesto; valor actual proviene de protoboard.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl"><span class="status pend">Sensor</span></div>
+        <div class="nm">IMU BMI160 · orientación</div>
+        <div class="desc">Pendiente validación física; ajustar ejes y filtro complementario sobre el guante.</div>
+      </div>
+      <div class="blkcard">
+        <div class="lbl"><span class="status pend">Integración</span></div>
+        <div class="nm">Unity · enlace completo</div>
+        <div class="desc">El cliente del juego aún no consume todos los campos del estado ni envía todos los comandos.</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Slide 10 · Riesgos abiertos</div>
+    <div>—</div>
+  </div>
+</section>
+
+<!-- ============ 11 · Plan de trabajo (light) ============ -->
+<section class="slide light">
+  <div class="chrome">
+    <div>Plan · Roadmap</div>
+    <div>11 / 12</div>
+  </div>
+  <div class="frame" style="padding-top:5.5vh;justify-content:flex-start">
+    <div class="kicker">Plan de trabajo actualizado</div>
+    <h2 class="h-md" style="margin-bottom:.6vh">De firmware a demostración.</h2>
+    <p class="lead" style="opacity:.7;max-width:60vw;margin-bottom:.4vh;font-size:max(12px,1vw)">Ocho hitos en orden de dependencia: cada paso desbloquea el siguiente.</p>
+
+    <div class="timeline">
+      <div class="tl-row"><div class="num">01</div><div class="txt"><b>Validar arranque</b> de la ESP32 con la PCB completa conectada.</div></div>
+      <div class="tl-row"><div class="num">02</div><div class="txt"><b>Probar entradas</b> del guante (joysticks, botones, flex) por Monitor Serial.</div></div>
+      <div class="tl-row"><div class="num">03</div><div class="txt"><b>Calibrar el sensor de flexión</b> con el guante puesto y fijar el umbral de disparo.</div></div>
+      <div class="tl-row"><div class="num">04</div><div class="txt"><b>Probar actuadores</b> (motores, solenoide, NeoPixel) sin Unity, vía comandos manuales.</div></div>
+      <div class="tl-row"><div class="num">05</div><div class="txt"><b>Validar seguridad de electrodos</b> con carga equivalente antes de habilitar el relé.</div></div>
+      <div class="tl-row"><div class="num">06</div><div class="txt"><b>Integrar protocolo TCP con Unity</b>: estado completo y todos los comandos.</div></div>
+      <div class="tl-row"><div class="num">07</div><div class="txt"><b>Ajustar patrones hápticos</b> según gameplay (intensidad, duración, zonas).</div></div>
+      <div class="tl-row"><div class="num">08</div><div class="txt"><b>Documentar pruebas finales</b> y preparar la demostración.</div></div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Slide 11 · Plan de trabajo</div>
+    <div>—</div>
+  </div>
+</section>
+
+<!-- ============ 12 · Cierre (hero dark) ============ -->
+<section class="slide hero dark">
+  <div class="chrome">
+    <div>Cierre · Closing</div>
+    <div>12 / 12</div>
+  </div>
+  <div class="frame" style="display:grid;gap:5vh;align-content:center;min-height:80vh;max-width:78vw">
+    <div class="kicker">Cierre</div>
+    <h1 class="h-hero" style="font-size:5.4vw;line-height:1.12">El firmware ya está adaptado<br>al hardware real.</h1>
+    <p class="h-sub" style="max-width:62vw;font-size:1.9vw">La siguiente etapa es <em>validación física</em>, calibración del guante e integración con Unity.</p>
+    <div class="meta-row" style="margin-top:1vh">
+      <span>Temas Selectos de Mecatrónica</span><span>·</span><span>FI · UNAM</span><span>·</span><span>Mayo 2026</span>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Gracias</div>
+    <div>— · —</div>
+  </div>
+</section>
+
+</div>
+
+<div id="nav"></div>
+
+<script>
+const VS = `attribute vec2 position;void main(){gl_Position=vec4(position,0.0,1.0);}`;
+
+const FS_DARK = `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;uniform vec2 u_mouse;
+vec3 palette(float t,vec3 a,vec3 b,vec3 c,vec3 d){return a+b*cos(6.28318*(c*t+d));}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution.xy;
+  vec2 p=uv*2.0-1.0;p.x*=u_resolution.x/u_resolution.y;
+  vec2 m=u_mouse*2.0-1.0;m.x*=u_resolution.x/u_resolution.y;
+  float md=length(p-m);
+  float mr=sin(md*15.0-u_time*4.0)*exp(-md*3.0);p+=mr*0.06;
+  vec2 p0=p;
+  for(float i=1.0;i<4.0;i++){
+    p.x+=0.1/i*sin(i*3.0*p.y+u_time*0.4)+0.05;
+    p.y+=0.1/i*cos(i*2.0*p.x+u_time*0.3)-0.05;
+  }
+  float r=length(p);float ang=atan(p.y,p.x);
+  vec3 a=vec3(0.05,0.10,0.18);
+  vec3 b=vec3(0.04,0.05,0.08);
+  vec3 c=vec3(1.0,1.0,1.0);
+  vec3 d=vec3(0.08,0.18,0.42);
+  vec3 col=palette(r*1.5+p0.x*0.5+u_time*0.1,a,b,c,d);
+  float disp=sin(r*22.0-u_time*1.4+ang*2.0)*0.5+0.5;
+  col+=vec3(disp*0.012,disp*0.018,disp*0.025);
+  vec3 base=vec3(0.04,0.08,0.15);
+  col=mix(base,col,0.78);
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+const FS_LIGHT = `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;uniform vec2 u_mouse;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){
+  vec2 i=floor(p),f=fract(p);
+  float a=hash(i),b=hash(i+vec2(1,0));
+  float c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));
+  vec2 u=f*f*(3.0-2.0*f);
+  return mix(a,b,u.x)+(c-a)*u.y*(1.0-u.x)+(d-b)*u.x*u.y;
+}
+float fbm(vec2 p){
+  float v=0.0,a=0.5;
+  mat2 m=mat2(0.80,0.60,-0.60,0.80);
+  for(int i=0;i<5;i++){v+=a*noise(p);p=m*p*2.02;a*=0.5;}
+  return v;
+}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution.xy;
+  vec2 p=uv;p.x*=u_resolution.x/u_resolution.y;
+  vec2 q=vec2(fbm(p*1.7+u_time*0.05),fbm(p*1.7+vec2(5.2,1.3)+u_time*0.04));
+  float f=fbm(p*2.0+q*1.3);
+  vec3 cool=vec3(0.88,0.90,0.93);
+  vec3 paper=vec3(0.96,0.965,0.975);
+  vec3 col=mix(cool,paper,f);
+  col+=vec3(0.42,0.55,0.78)*sin(q.x*2.0+u_time*0.3)*0.025;
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+const mouse={x:0.5,y:0.5};
+addEventListener('mousemove',e=>{mouse.x=e.clientX/innerWidth;mouse.y=e.clientY/innerHeight});
+
+function bootGL(canvasId, fsSrc){
+  const canvas=document.getElementById(canvasId);
+  const gl=canvas.getContext('webgl',{alpha:false,antialias:true});
+  if(!gl) return ()=>false;
+  const mk=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh};
+  const prog=gl.createProgram();
+  gl.attachShader(prog,mk(gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,mk(gl.FRAGMENT_SHADER,fsSrc));
+  gl.linkProgram(prog);gl.useProgram(prog);
+  const buf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  const pos=gl.getAttribLocation(prog,'position');
+  gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
+  const lRes=gl.getUniformLocation(prog,'u_resolution');
+  const lT=gl.getUniformLocation(prog,'u_time');
+  const lM=gl.getUniformLocation(prog,'u_mouse');
+  const resize=()=>{
+    const d=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=innerWidth*d;canvas.height=innerHeight*d;
+    gl.viewport(0,0,canvas.width,canvas.height);
+  };
+  addEventListener('resize',resize);resize();
+  return (tSec)=>{
+    gl.uniform2f(lRes,canvas.width,canvas.height);
+    gl.uniform1f(lT,tSec);
+    gl.uniform2f(lM,mouse.x,1-mouse.y);
+    gl.drawArrays(gl.TRIANGLES,0,6);
+    return true;
+  };
+}
+const drawDark=bootGL('bg-dark',FS_DARK);
+const drawLight=bootGL('bg-light',FS_LIGHT);
+const t0=Date.now();
+(function loop(){
+  const t=(Date.now()-t0)/1000;
+  drawDark(t);drawLight(t);
+  requestAnimationFrame(loop);
+})();
+
+const deck=document.getElementById('deck');
+const slides=deck.querySelectorAll('.slide');
+const nav=document.getElementById('nav');
+let idx=0,total=slides.length,lock=false;
+deck.style.width=(total*100)+'vw';
+
+slides.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className='dot';b.dataset.i=i;b.setAttribute('aria-label','Page '+(i+1));
+  b.onclick=()=>go(i);
+  nav.appendChild(b);
+});
+
+function go(n){
+  if(lock)return;
+  idx=Math.max(0,Math.min(total-1,n));
+  deck.style.transform=`translateX(${-idx*100}vw)`;
+  slides.forEach((s,i)=>s.classList.toggle('active',i===idx));
+  nav.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  const el=slides[idx];
+  const th=el.dataset.theme || (el.classList.contains('light')?'light':(el.classList.contains('dark')?'dark':'dark'));
+  document.body.classList.toggle('light-bg',th==='light');
+  try{localStorage.setItem('chaleco-deck-idx',String(idx));}catch(e){}
+  lock=true;setTimeout(()=>lock=false,700);
+}
+
+let overviewOn=false;
+const ov=document.createElement('div');
+ov.id='overview';
+ov.style.cssText='position:fixed;inset:0;z-index:100;background:rgba(var(--ink-rgb),.94);backdrop-filter:blur(12px);display:none;overflow-y:auto;padding:4vh 4vw';
+document.body.appendChild(ov);
+
+function buildOverview(){
+  ov.innerHTML='';
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:2vh 1.6vw;max-width:90vw;margin:0 auto';
+  slides.forEach((s,i)=>{
+    const card=document.createElement('div');
+    card.style.cssText='cursor:pointer;border-radius:6px;overflow:hidden;border:2px solid '+(i===idx?'rgba(var(--paper-rgb),.8)':'rgba(var(--paper-rgb),.15)')+';transition:border-color .2s';
+    const wrap=document.createElement('div');
+    wrap.style.cssText='width:100%;aspect-ratio:16/9;overflow:hidden;position:relative;pointer-events:none;background:'+(s.classList.contains('light')?'var(--paper)':'var(--ink)');
+    const clone=s.cloneNode(true);
+    clone.style.cssText='width:100vw;height:100vh;transform:scale('+(1/4.5)+');transform-origin:top left;position:absolute;top:0;left:0;pointer-events:none';
+    wrap.appendChild(clone);
+    const label=document.createElement('div');
+    label.style.cssText='padding:6px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:.7';
+    label.textContent=(i+1)+' / '+total;
+    card.appendChild(wrap);card.appendChild(label);
+    card.onclick=()=>{toggleOverview();go(i)};
+    grid.appendChild(card);
+  });
+  ov.appendChild(grid);
+}
+
+function toggleOverview(){
+  overviewOn=!overviewOn;
+  ov.style.display=overviewOn?'block':'none';
+  if(overviewOn)buildOverview();
+}
+
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.preventDefault();toggleOverview();return;}
+  if(overviewOn)return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '||e.key==='ArrowDown')go(idx+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp'||e.key==='ArrowUp')go(idx-1);
+  if(e.key==='Home')go(0);
+  if(e.key==='End')go(total-1);
+});
+
+let wheelTO=null,wheelAcc=0;
+addEventListener('wheel',e=>{
+  wheelAcc+=e.deltaY+e.deltaX;
+  if(Math.abs(wheelAcc)>50){go(idx+(wheelAcc>0?1:-1));wheelAcc=0;}
+  clearTimeout(wheelTO);wheelTO=setTimeout(()=>wheelAcc=0,150);
+},{passive:true});
+
+let tx=0,ty=0;
+addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+addEventListener('touchend',e=>{
+  const dx=(e.changedTouches[0].clientX-tx);
+  const dy=(e.changedTouches[0].clientY-ty);
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy))go(idx+(dx<0?1:-1));
+},{passive:true});
+
+let saved=0;try{saved=parseInt(localStorage.getItem('chaleco-deck-idx')||'0',10)||0}catch(e){}
+go(Math.max(0,Math.min(total-1,saved)));
+</script>
+</body>
+</html>

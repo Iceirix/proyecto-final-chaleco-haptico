@@ -1,0 +1,12 @@
+# Logs del servidor de la presentacion
+Presentacion/*.log
+
+# Archivos comprimidos (duplican carpetas ya versionadas)
+*.rar
+
+# Documentos internos de trabajo
+CLAUDE.md
+IDEAS.md
+
+# Memoria / config de Claude
+.claude/
