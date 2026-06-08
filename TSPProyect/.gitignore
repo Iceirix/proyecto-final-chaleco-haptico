@@ -1,0 +1,63 @@
+# ---------------------------------------------------------------
+# .gitignore para proyecto Unity (TSPProyect)
+# Solo se versionan: Assets/, Packages/, ProjectSettings/
+# Todo lo demas Unity lo regenera al abrir el proyecto.
+# ---------------------------------------------------------------
+
+# Carpetas generadas por Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Cache de Asset Store
+/[Aa]ssets/AssetStoreTools*
+/[Aa]ssets/Plugins/Editor/JetBrains*
+
+# Archivos de Visual Studio / IDE
+/.vs/
+/.vsconfig
+/.idea/
+/.gradle/
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Logs de crash de Unity
+sysinfo.txt
+
+# Builds y paquetes generados
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de upgrade de Unity
+UpgradeLog.htm
+/[Mm]igrationBackup/
+
+# Cache de Burst
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
