@@ -10,10 +10,10 @@ void DebugPrintAll()
   if (debugRowsUntilHeader == 0)
   {
     Serial.println();
-    Serial.printf(" %1s %1s %1s %2s %2s | %6s %6s | %6s %6s | %4s %4s %4s | %7s %7s %3s | %3s %3s %3s %3s | %1s %1s %3s | %s\r\n",
+    Serial.printf(" %1s %1s %2s %2s %2s | %6s %6s | %6s %6s | %4s %4s %4s | %7s %7s %3s | %3s %3s %3s %3s | %1s %1s %3s | %s\r\n",
                   "J",
                   "S",
-                  "W",
+                  "B2",
                   "B3",
                   "B4",
                   "J1X",
@@ -25,7 +25,7 @@ void DebugPrintAll()
                   "TRG",
                   "ROLL",
                   "PITCH",
-                  "RLD",
+                  "WP",
                   "M1",
                   "M2",
                   "M3",
@@ -38,10 +38,10 @@ void DebugPrintAll()
   }
   debugRowsUntilHeader--;
 
-  Serial.printf(" %d %d %d  %d  %d | %+6.2f %+6.2f | %+6.2f %+6.2f | %4d %4d %4d | %+7.2f %+7.2f %3d | %3d %3d %3d %3d | %d %d %3d | %s\r\n",
+  Serial.printf(" %d %d %2d %2d %2d | %+6.2f %+6.2f | %+6.2f %+6.2f | %4d %4d %4d | %+7.2f %+7.2f %3d | %3d %3d %3d %3d | %d %d %3d | %s\r\n",
                 jump ? 1 : 0,
                 shoot ? 1 : 0,
-                changeWeapon ? 1 : 0,
+                pb2Reserved ? 1 : 0,
                 pb3Reserved ? 1 : 0,
                 pb4Reserved ? 1 : 0,
                 vrx1,
@@ -53,7 +53,7 @@ void DebugPrintAll()
                 flexTriggerThreshold,
                 rollAngle,
                 pitchAngle,
-                reload ? 1 : 0,
+                weaponIndex,
                 motorTarget[0],
                 motorTarget[1],
                 motorTarget[2],

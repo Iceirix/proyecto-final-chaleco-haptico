@@ -2,25 +2,25 @@
 //  ProtocolSend.ino - Empaqueta y envia el estado a Unity.
 //
 //  CSV terminado en "\n":
-//    jump,shoot,changeWeapon,vrx1,vry1,vrx2,vry2,flex,roll,pitch,reload
+//    jump,shoot,weapon,vrx1,vry1,vrx2,vry2,flex,roll,pitch
 //
 //  shoot ya viene calculado a partir del sensor de flexion.
-//  reload se calcula a partir del roll de la IMU (giro del brazo). Se anexa al
-//  final para no mover los indices 0..9 que Unity ya parsea por posicion.
+//  weapon es el indice de arma 0..3, fuente de verdad en la ESP, calculado a
+//  partir del gesto de roll de la IMU (ver IMU.ino::UpdateWeaponFromRoll).
+//  Unity cambia de arma cuando este indice difiere del suyo.
 // ============================================================================
 
 void SendStateToUnity()
 {
   char buf[160];
   snprintf(buf, sizeof(buf),
-           "%d,%d,%d,%.3f,%.3f,%.3f,%.3f,%d,%.2f,%.2f,%d\n",
+           "%d,%d,%d,%.3f,%.3f,%.3f,%.3f,%d,%.2f,%.2f\n",
            jump ? 1 : 0,
            shoot ? 1 : 0,
-           changeWeapon ? 1 : 0,
+           weaponIndex,
            vrx1, vry1, vrx2, vry2,
            flexValue,
-           rollAngle, pitchAngle,
-           reload ? 1 : 0);
+           rollAngle, pitchAngle);
 
   if (client && client.connected())
   {

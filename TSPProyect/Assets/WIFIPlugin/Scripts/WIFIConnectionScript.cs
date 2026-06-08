@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Globalization;
 using UnityEngine;
 using System.Threading;
 using System.Net.Sockets;
@@ -16,6 +17,7 @@ using System.Net.Sockets;
 		public static float J2Y;
 		public static bool Jump;
 		public static bool Shoot;
+		public static int Weapon;   // indice de arma 0..3 que manda la ESP (gesto IMU)
 
 		public static float CAMX;
 		public static float CAMY;
@@ -26,15 +28,15 @@ using System.Net.Sockets;
     public bool connect;
 		public int port = 80;   //Puerto
 		public string host = "192.175.5.1";
-		public string recievedData; //string para recibir información
+		public string recievedData; //string para recibir informaciï¿½n
 
 		public delegate void WIFIEvents(string incomigString);
 		public static event WIFIEvents WhenReceiveDataCall;
 		private bool abort; //Variable para saber si abortar o no el hilo
-		private static bool socketReady = false; //Si el socket está listo
+		private static bool socketReady = false; //Si el socket estï¿½ listo
 
 		private TcpClient tcpClient; //Crea un socket	
-		private Thread secondaryThread; //Hilo para recibir información
+		private Thread secondaryThread; //Hilo para recibir informaciï¿½n
 		private static StreamWriter streamWriter; //stream de escritura
 		private static StreamReader streamReader; //stream de lectura
 		private NetworkStream networkStream; //stream de red
@@ -64,10 +66,10 @@ using System.Net.Sockets;
 			try
 			{
 				tcpClient = new TcpClient(host, port); //Se conecta al Arduino en el puerto indicado
-				networkStream = tcpClient.GetStream(); //crea un stream para enviar y recibir información
+				networkStream = tcpClient.GetStream(); //crea un stream para enviar y recibir informaciï¿½n
 				streamWriter = new StreamWriter(networkStream); //crea stream de escritura
 				streamReader = new StreamReader(networkStream); //crea stream de lectura
-				socketReady = true; //Si todo funciona bien el socket está listo
+				socketReady = true; //Si todo funciona bien el socket estï¿½ listo
 				CheckingMainThread();
 				secondaryThread = new Thread(RecieveData);
 				secondaryThread.Start();
@@ -108,22 +110,30 @@ using System.Net.Sockets;
 				{
 					recievedData = streamReader.ReadLine();
 
+                if (recievedData == null) { continue; }
+
+                // CSV de la ESP (ver ProtocolSend.ino):
+                //   jump,shoot,weapon,vrx1,vry1,vrx2,vry2,flex,roll,pitch
+                //     0    1     2      3    4    5    6    7    8    9
                 string[] datos = recievedData.Split(',');
 
-                if (datos.Length >= 6)
+                if (datos.Length >= 7)
                 {
                     Jump = datos[0] == "1";
                     Shoot = datos[1] == "1";
 
-                    float.TryParse(datos[2], out J1X);
-                    float.TryParse(datos[3], out J1Y);
+                    int.TryParse(datos[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out Weapon);
 
-                    float.TryParse(datos[4], out J2X);
-                    float.TryParse(datos[5], out J2Y);
+                    float.TryParse(datos[3], NumberStyles.Float, CultureInfo.InvariantCulture, out J1X);
+                    float.TryParse(datos[4], NumberStyles.Float, CultureInfo.InvariantCulture, out J1Y);
+
+                    float.TryParse(datos[5], NumberStyles.Float, CultureInfo.InvariantCulture, out J2X);
+                    float.TryParse(datos[6], NumberStyles.Float, CultureInfo.InvariantCulture, out J2Y);
                 }
                 Debug.Log(
  "Jump=" + Jump +
  " Shoot=" + Shoot +
+ " Weapon=" + Weapon +
  " J1X=" + J1X +
  " J1Y=" + J1Y +
  " J2X=" + J2X +
@@ -150,7 +160,7 @@ using System.Net.Sockets;
 				return;
 			}
 
-			streamWriter.Write(infoToSend + '\n'); //Envía la información usando el stream
+			streamWriter.Write(infoToSend + '\n'); //Envï¿½a la informaciï¿½n usando el stream
 			streamWriter.Flush(); //Limpia el stream
 		}
 

@@ -26,7 +26,9 @@ void ConfigureAP()
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(IP_AP, IP_AP, subnet);
   WiFi.softAPsetHostname(DEVICE_HOSTNAME);
-  WiFi.softAP(AP_SSID, AP_PASSWORD);
+  // canal 1, SSID visible, max_connection alto para alojar la PC de Unity y
+  // varios celulares viendo el dashboard al mismo tiempo.
+  WiFi.softAP(AP_SSID, AP_PASSWORD, 1, 0, AP_MAX_CONNECTIONS);
 
   server.begin();
   server.setNoDelay(true);
@@ -64,8 +66,9 @@ void ConfigureAP()
 
 void TryAcceptClient()
 {
-  if (client && client.connected()) return;
-
+  // Siempre atendemos el puerto 80, incluso con Unity ya conectado: asi un
+  // navegador que tipea "chaleco" mientras el juego corre recibe el 302 al
+  // dashboard. Solo se ignora un SEGUNDO cliente Unity (ver mas abajo).
   WiFiClient incoming = server.available();
   if (!incoming) return;
 
@@ -89,13 +92,22 @@ void TryAcceptClient()
 
   if (LooksLikeHttp(sniff, n))
   {
+    // Navegador: redirige al dashboard. Funciona aunque Unity ya este conectado.
     RedirectBrowserToDashboard(incoming);
     incoming.stop();
     return;
   }
 
-  // Cliente Unity. Conserva los bytes ya consumidos: alimentalos al parser
-  // como si acabaran de llegar (asi no se pierde el primer comando).
+  // Cliente Unity. Si ya hay uno activo, ignora el socket nuevo (no robamos la
+  // sesion del juego en curso).
+  if (client && client.connected())
+  {
+    incoming.stop();
+    return;
+  }
+
+  // Conserva los bytes ya consumidos: alimentalos al parser como si acabaran
+  // de llegar (asi no se pierde el primer comando).
   client = incoming;
   for (int i = 0; i < n; i++) FeedSniffedByteToUnity(sniff[i]);
   Serial.println("Cliente Unity conectado");

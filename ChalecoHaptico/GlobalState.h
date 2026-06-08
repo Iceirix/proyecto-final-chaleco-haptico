@@ -4,6 +4,7 @@
 // WiFi AP + TCP.
 const char* AP_SSID = "ESP32_Chaleco";
 const char* AP_PASSWORD = "123456789";
+const int AP_MAX_CONNECTIONS = 8;  // estaciones: PC con Unity + varios celulares en el dashboard
 WiFiServer server(80);
 WiFiClient client;
 
@@ -15,19 +16,18 @@ DNSServer dnsServer;
 // Dashboard HTTP (servidor independiente para no interferir con Unity).
 #if ENABLE_DASHBOARD
 WiFiServer dashboardServer(DASHBOARD_PORT);
-WiFiClient dashboardClient;      // stream SSE persistente
+WiFiClient dashboardClients[DASHBOARD_MAX_STREAMS]; // streams SSE persistentes, uno por dispositivo
 WiFiClient dashboardReqClient;   // peticiones HTTP cortas (pagina, /cmd)
 String dashboardRxBuffer = "";
 String dashboardMethod = "";
 String dashboardPath = "";
-bool dashboardStreaming = false;
 unsigned long dashboardLastMs = 0;
 #endif
 
 // Inputs.
 bool jump = false;
 bool shoot = false;
-bool changeWeapon = false;
+bool pb2Reserved = false;   // PB2 libre: reservado para accion futura
 bool pb3Reserved = false;
 bool pb4Reserved = false;
 
@@ -46,14 +46,17 @@ const int FLEX_TRIGGER_HYSTERESIS = 150;
 float rollAngle = 0.0f;
 float pitchAngle = 0.0f;
 
-// Recarga por giro del brazo (roll de la IMU). Analoga al gatillo por flex:
-// al superar el umbral se activa la recarga y se libera con histeresis para
-// evitar rebotes. Ajusta estos dos valores aqui tras probar el guante; la
-// direccion del gesto (subir o bajar el roll) se elige con RELOAD_WHEN_ABOVE
-// en HardwareConfig.h.
-bool reload = false;
-const float RELOAD_ROLL_THRESHOLD = 60.0f;    // grados; angulo de roll que dispara la recarga
-const float RELOAD_ROLL_HYSTERESIS = 15.0f;   // grados de retorno para soltar la recarga
+// Cambio de arma por giro del brazo (roll de la IMU). Gesto "inclinar y volver
+// al centro": al superar +UMBRAL avanza un arma, al pasar -UMBRAL retrocede, y
+// el gesto se rearma solo cuando el roll regresa a la banda central. Asi cada
+// giro cuenta como un solo cambio. weaponIndex es la fuente de verdad y se
+// envia a Unity como indice absoluto 0..WEAPON_COUNT-1 (ver ProtocolSend.ino).
+// La direccion del giro se invierte con WEAPON_ROLL_INVERT en HardwareConfig.h.
+int weaponIndex = 0;
+bool weaponGestureArmed = true;
+const int   WEAPON_COUNT = 4;                 // armas en la rueda de Unity
+const float WEAPON_ROLL_THRESHOLD = 45.0f;    // grados de roll para contar un cambio
+const float WEAPON_ROLL_REARM = 20.0f;        // banda central (grados) para rearmar el gesto
 
 int16_t axRaw = 0, ayRaw = 0, azRaw = 0;
 int16_t gxRaw = 0, gyRaw = 0, gzRaw = 0;

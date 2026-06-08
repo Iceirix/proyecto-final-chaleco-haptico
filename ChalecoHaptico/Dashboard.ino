@@ -10,7 +10,10 @@
 //  Acceso desde el navegador del telefono o PC conectado al AP del ESP:
 //     http://192.175.5.1:81/
 //
-//  El puerto 80 se reserva para Unity y el puerto 81 para el dashboard.
+//  El puerto 80 atiende a Unity (y redirige navegadores al :81 aunque el juego
+//  ya este conectado). El puerto 81 sirve el dashboard. Hasta
+//  DASHBOARD_MAX_STREAMS dispositivos pueden ver telemetria a la vez: cada uno
+//  ocupa un slot en dashboardClients[] y recibe la misma trama SSE.
 // ============================================================================
 
 #if ENABLE_DASHBOARD
@@ -19,10 +22,11 @@
 
 static void HandleDashboardRequest();
 static void ServeHtmlPage();
-static void StartSseStream();
+static void StartSseStream(WiFiClient& c);
 static void HandleCommandRequest();
 static void Send404();
 static void SendDashboardFrame();
+static int DashboardStreamCount();
 static String UrlDecode(const String& s);
 
 void InitDashboard()
@@ -38,15 +42,18 @@ void InitDashboard()
 
 void UpdateDashboard()
 {
-  // Mantenimiento del stream SSE persistente (dashboardClient).
-  if (dashboardClient && !dashboardClient.connected())
+  // Mantenimiento: libera los slots de streaming cuyo dispositivo cerro la
+  // pestana, para que otro dispositivo pueda reusar el socket.
+  for (int i = 0; i < DASHBOARD_MAX_STREAMS; i++)
   {
-    dashboardClient.stop();
-    dashboardStreaming = false;
+    if (dashboardClients[i] && !dashboardClients[i].connected())
+    {
+      dashboardClients[i].stop();
+    }
   }
 
   // Acepta una peticion HTTP corta en un cliente transitorio aparte, para no
-  // bloquear el stream SSE que ocupa dashboardClient de forma permanente.
+  // bloquear los streams SSE persistentes.
   if (!dashboardReqClient || !dashboardReqClient.connected())
   {
     WiFiClient incoming = dashboardServer.available();
@@ -95,8 +102,9 @@ void UpdateDashboard()
     }
   }
 
-  // Modo streaming: empuja una trama JSON cada DASHBOARD_PERIOD_MS.
-  if (dashboardStreaming && dashboardClient && dashboardClient.connected())
+  // Modo streaming: empuja una trama JSON a TODOS los dispositivos conectados
+  // cada DASHBOARD_PERIOD_MS. Se construye una sola vez y se reparte.
+  if (DashboardStreamCount() > 0)
   {
     unsigned long now = millis();
     if (now - dashboardLastMs >= DASHBOARD_PERIOD_MS)
@@ -105,6 +113,17 @@ void UpdateDashboard()
       SendDashboardFrame();
     }
   }
+}
+
+// Cantidad de dispositivos con el stream SSE abierto en este momento.
+static int DashboardStreamCount()
+{
+  int count = 0;
+  for (int i = 0; i < DASHBOARD_MAX_STREAMS; i++)
+  {
+    if (dashboardClients[i] && dashboardClients[i].connected()) count++;
+  }
+  return count;
 }
 
 static void HandleDashboardRequest()
@@ -116,11 +135,22 @@ static void HandleDashboardRequest()
   }
   else if (dashboardPath == "/stream")
   {
-    // Promueve el cliente transitorio al slot persistente de streaming.
-    if (dashboardClient && dashboardClient.connected()) dashboardClient.stop();
-    dashboardClient = dashboardReqClient;
+    // Busca un slot de streaming libre para este dispositivo. Asi varios
+    // celulares/PCs pueden ver el dashboard a la vez, cada uno con su socket.
+    int slot = -1;
+    for (int i = 0; i < DASHBOARD_MAX_STREAMS; i++)
+    {
+      if (!dashboardClients[i] || !dashboardClients[i].connected()) { slot = i; break; }
+    }
+    if (slot < 0)
+    {
+      // Todos los slots ocupados: desaloja el mas antiguo (slot 0) para el nuevo.
+      dashboardClients[0].stop();
+      slot = 0;
+    }
+    dashboardClients[slot] = dashboardReqClient;
     dashboardReqClient = WiFiClient(); // libera el slot transitorio sin cerrar el socket
-    StartSseStream();
+    StartSseStream(dashboardClients[slot]);
   }
   else if (dashboardPath.startsWith("/cmd"))
   {
@@ -162,7 +192,7 @@ static void ServeHtmlPage()
   }
 }
 
-static void StartSseStream()
+static void StartSseStream(WiFiClient& c)
 {
   const char* hdr =
     "HTTP/1.1 200 OK\r\n"
@@ -172,9 +202,8 @@ static void StartSseStream()
     "X-Accel-Buffering: no\r\n"
     "\r\n"
     ": ok\n\n";
-  dashboardClient.write((const uint8_t*)hdr, strlen(hdr));
-  dashboardStreaming = true;
-  dashboardLastMs = 0; // fuerza envio inmediato en el primer tick
+  c.write((const uint8_t*)hdr, strlen(hdr));
+  dashboardLastMs = 0; // fuerza envio inmediato a todos en el siguiente tick
 }
 
 static void Send404()
@@ -279,7 +308,7 @@ static void SendDashboardFrame()
       "\"j\":%d,\"s\":%d,\"w\":%d,\"b3\":%d,\"b4\":%d,"
       "\"jx1\":%.3f,\"jy1\":%.3f,\"jx2\":%.3f,\"jy2\":%.3f,"
       "\"fx\":%d,\"fxr\":%d,\"fxt\":%d,"
-      "\"r\":%.2f,\"p\":%.2f,\"rl\":%d,"
+      "\"r\":%.2f,\"p\":%.2f,\"wp\":%d,\"wa\":%d,"
       "\"ax\":%.3f,\"ay\":%.3f,\"az\":%.3f,"
       "\"gx\":%.2f,\"gy\":%.2f,\"gz\":%.2f,"
       "\"m\":[%d,%d,%d,%d],"
@@ -288,12 +317,12 @@ static void SendDashboardFrame()
     "}\n\n",
     jump ? 1 : 0,
     shoot ? 1 : 0,
-    changeWeapon ? 1 : 0,
+    pb2Reserved ? 1 : 0,
     pb3Reserved ? 1 : 0,
     pb4Reserved ? 1 : 0,
     vrx1, vry1, vrx2, vry2,
     flexValue, flexRestValue, flexTriggerThreshold,
-    rollAngle, pitchAngle, reload ? 1 : 0,
+    rollAngle, pitchAngle, weaponIndex, weaponGestureArmed ? 1 : 0,
     accX, accY, accZ,
     gyrX, gyrY, gyrZ,
     motorTarget[0], motorTarget[1], motorTarget[2], motorTarget[3],
@@ -307,7 +336,14 @@ static void SendDashboardFrame()
 
   if (n > 0 && n < (int)sizeof(buf))
   {
-    dashboardClient.write((const uint8_t*)buf, n);
+    // Reparte la misma trama a cada dispositivo con el stream abierto.
+    for (int i = 0; i < DASHBOARD_MAX_STREAMS; i++)
+    {
+      if (dashboardClients[i] && dashboardClients[i].connected())
+      {
+        dashboardClients[i].write((const uint8_t*)buf, n);
+      }
+    }
   }
 }
 

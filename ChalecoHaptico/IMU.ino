@@ -65,33 +65,40 @@ void ReadIMU()
   rollAngle  = BETA_COMP * (rollAngle  - gyrX * dt) + (1.0f - BETA_COMP) * accAngleXFil;
   pitchAngle = BETA_COMP * (pitchAngle + gyrY * dt) + (1.0f - BETA_COMP) * accAngleYFil;
 
-  UpdateReloadFromRoll();
+  UpdateWeaponFromRoll();
 }
 
-// Recarga por giro del brazo: replica la logica del gatillo por flex
-// (UpdateShootFromFlex) pero sobre el angulo de roll de la IMU. La histeresis
-// evita que la recarga parpadee mientras el roll ronda el umbral.
-void UpdateReloadFromRoll()
+// Cambio de arma por giro del brazo. Gesto "inclinar y volver al centro":
+// mientras el gesto este armado, pasar +UMBRAL avanza un arma y pasar -UMBRAL
+// retrocede. Tras contar un cambio el gesto se desarma y solo vuelve a armarse
+// cuando el roll regresa a la banda central (|roll| < REARM). Asi un giro
+// cuenta como un solo cambio, sin ciclado descontrolado al mantener la mano
+// girada. El indice da la vuelta (wrap) sobre WEAPON_COUNT armas.
+void UpdateWeaponFromRoll()
 {
-#if RELOAD_WHEN_ABOVE
-  if (!reload && rollAngle >= RELOAD_ROLL_THRESHOLD)
-  {
-    reload = true;
-  }
-  else if (reload && rollAngle <= RELOAD_ROLL_THRESHOLD - RELOAD_ROLL_HYSTERESIS)
-  {
-    reload = false;
-  }
+#if WEAPON_ROLL_INVERT
+  const int dir = -1;
 #else
-  if (!reload && rollAngle <= RELOAD_ROLL_THRESHOLD)
-  {
-    reload = true;
-  }
-  else if (reload && rollAngle >= RELOAD_ROLL_THRESHOLD + RELOAD_ROLL_HYSTERESIS)
-  {
-    reload = false;
-  }
+  const int dir = 1;
 #endif
+
+  if (weaponGestureArmed)
+  {
+    if (rollAngle >= WEAPON_ROLL_THRESHOLD)
+    {
+      weaponIndex = (weaponIndex + dir + WEAPON_COUNT) % WEAPON_COUNT;
+      weaponGestureArmed = false;
+    }
+    else if (rollAngle <= -WEAPON_ROLL_THRESHOLD)
+    {
+      weaponIndex = (weaponIndex - dir + WEAPON_COUNT) % WEAPON_COUNT;
+      weaponGestureArmed = false;
+    }
+  }
+  else if (fabsf(rollAngle) < WEAPON_ROLL_REARM)
+  {
+    weaponGestureArmed = true;
+  }
 }
 
 void ReadAccelerometer()

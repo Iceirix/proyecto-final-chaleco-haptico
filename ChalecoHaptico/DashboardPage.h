@@ -119,7 +119,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:none;border-ra
     <h2>Entradas digitales <span class="tag">PB1-PB4</span></h2>
     <div class="btn-grid">
       <div class="btn" id="btn-jump"><div class="dot"></div><div><div class="label">PB1 · SALTO</div><div class="sub">jump</div></div></div>
-      <div class="btn" id="btn-weapon"><div class="dot"></div><div><div class="label">PB2 · ARMA</div><div class="sub">changeWeapon</div></div></div>
+      <div class="btn" id="btn-weapon"><div class="dot"></div><div><div class="label">PB2 · reservado</div><div class="sub">pb2</div></div></div>
       <div class="btn" id="btn-b3"><div class="dot"></div><div><div class="label">PB3</div><div class="sub">reservado</div></div></div>
       <div class="btn" id="btn-b4"><div class="dot"></div><div><div class="label">PB4</div><div class="sub">reservado</div></div></div>
     </div>
@@ -162,7 +162,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:none;border-ra
         <div style="margin-top:6px;color:var(--dim);font-size:11px;letter-spacing:1px">PITCH</div>
       </div>
     </div>
-    <div class="btn" id="btn-reload" style="margin-top:14px"><div class="dot"></div><div><div class="label">RECARGA</div><div class="sub">roll sobre umbral</div></div></div>
+    <div class="btn" id="btn-arma" style="margin-top:14px"><div class="dot"></div><div><div class="label">ARMA <span id="arma-idx">1</span>/4</div><div class="sub" id="arma-state">gesto listo</div></div></div>
   </section>
 
   <section class="panel col-8">
@@ -369,7 +369,9 @@ function apply(d){
   $('pitch-ring').style.setProperty('--p',pitchP);
   $('roll-v').innerHTML=(d.r>=0?'+':'')+d.r.toFixed(1)+'&deg;';
   $('pitch-v').innerHTML=(d.p>=0?'+':'')+d.p.toFixed(1)+'&deg;';
-  setBtn($('btn-reload'),d.rl);
+  $('arma-idx').textContent=((d.wp|0)+1);
+  $('arma-state').textContent=d.wa?'gesto listo':'cambiando...';
+  setBtn($('btn-arma'),!d.wa);
 
   pushSample(d);
 

@@ -23,7 +23,7 @@ void InitInputs()
 void ReadInputs()
 {
   jump = digitalRead(JUMP_PIN);
-  changeWeapon = digitalRead(CHANGE_WEAPON_PIN);
+  pb2Reserved = digitalRead(PB2_PIN);
   pb3Reserved = digitalRead(PB3_PIN);
   pb4Reserved = digitalRead(PB4_PIN);
 

@@ -9,8 +9,9 @@
 #define PB3_PIN 15
 #define PB4_PIN 16
 
-#define JUMP_PIN          PB1_PIN
-#define CHANGE_WEAPON_PIN PB2_PIN
+#define JUMP_PIN PB1_PIN
+// PB2/PB3/PB4 quedan reservados para acciones futuras. El cambio de arma ya no
+// usa boton: lo controla el roll de la IMU (ver IMU.ino::UpdateWeaponFromRoll).
 
 // Joysticks y flex.
 #define JOY1_X_PIN 32
@@ -49,18 +50,18 @@
 // flexionado ~bajo), asi que el gatillo dispara cuando cae bajo el umbral.
 #define FLEX_TRIGGER_WHEN_BELOW 1
 
-// Recarga por giro del brazo: la IMU mide roll y al superar el umbral se
-// dispara una recarga (analogo al gatillo por flex). Por defecto dispara
-// cuando el roll SUBE sobre el umbral; ponlo en 0 si el gesto natural en el
-// guante baja el roll (girar el brazo al otro lado). El umbral en grados y la
-// histeresis se ajustan en GlobalState.h tras pruebas.
-#define RELOAD_WHEN_ABOVE 1
+// Cambio de arma por giro del brazo: roll positivo avanza un arma y roll
+// negativo retrocede. Pon esto en 1 si en el guante el gesto queda invertido
+// (girar a la derecha deberia avanzar pero retrocede). Umbral y banda de
+// rearmado se ajustan en GlobalState.h tras pruebas.
+#define WEAPON_ROLL_INVERT 0
 
 // Dashboard web embebido. Usa un puerto distinto al TCP de Unity para no
 // interferir con la comunicacion del videojuego.
 #define ENABLE_DASHBOARD 1
 #define DASHBOARD_PORT 81
 #define DASHBOARD_PERIOD_MS 40   // 25 Hz - mitad del rate de Unity
+#define DASHBOARD_MAX_STREAMS 4  // dispositivos que pueden ver el dashboard a la vez (cada uno usa un socket)
 
 // Hostname amigable. Se anuncia via mDNS (chaleco.local) y un servidor DNS
 // captivo embebido lo resuelve aunque el celular no soporte mDNS.

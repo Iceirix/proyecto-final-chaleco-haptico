@@ -1,12 +1,14 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class SelectWeaponScript : MonoBehaviour
 {
-    public bool canSelect;    
+    public bool canSelect;
     public bool selectingWeaponFinnished;
     public int weaponIndex;
     public float dividerAngle;
     public float selectorDistance;
+    public float hudFlashTime = 0.6f;   // segundos que se muestra la rueda al cambiar con la IMU
     public AudioClip changeWeaponClip;
     public GameObject selectionHUD;    
     public GameObject[] weapons;
@@ -68,6 +70,45 @@ public class SelectWeaponScript : MonoBehaviour
         if (selectingWeapon)
         {
             SelectWeapon();
+        }
+
+        // Cambio de arma dirigido por la IMU del guante. La ESP es la fuente de
+        // verdad del indice (lo calcula del gesto de roll); cuando difiere del
+        // arma actual y no se esta usando la rueda con mouse, cambiamos de arma
+        // reusando el HUD y la animacion existentes.
+        if (!selectingWeapon && canSelect && WIFIConnectionScript.Weapon != weaponIndex)
+        {
+            ChangeWeaponFromIMU(WIFIConnectionScript.Weapon);
+        }
+    }
+
+    private void ChangeWeaponFromIMU(int target)
+    {
+        if (target < 0 || target >= weapons.Length) { return; }
+
+        selectingWeaponFinnished = false;
+        weaponIndex = target;
+
+        foreach (GameObject weaponIndicator in weaponsIndicators)
+        {
+            weaponIndicator.SetActive(false);
+        }
+        weaponsIndicators[weaponIndex].SetActive(true);
+
+        ChangeWeapon();
+
+        // Muestra la rueda un instante como feedback visual del gesto.
+        selectionHUD.SetActive(true);
+        StopAllCoroutines();
+        StartCoroutine(HideSelectionHUD());
+    }
+
+    private IEnumerator HideSelectionHUD()
+    {
+        yield return new WaitForSeconds(hudFlashTime);
+        if (!selectingWeapon)
+        {
+            selectionHUD.SetActive(false);
         }
     }
 
