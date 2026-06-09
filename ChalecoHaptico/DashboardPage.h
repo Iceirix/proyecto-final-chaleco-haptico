@@ -88,7 +88,7 @@ canvas{display:block;width:100%;height:130px;background:#0e131b;border-radius:8p
 
 /* Control manual */
 .ctrl{display:grid;gap:12px}
-.slider-row{display:grid;grid-template-columns:90px 1fr 48px;align-items:center;gap:10px}
+.slider-row{display:grid;grid-template-columns:90px 1fr 104px;align-items:center;gap:10px}
 .slider-row .lab{font-family:var(--mono);font-size:12px;color:var(--dim)}
 .slider-row .val{font-family:var(--mono);font-size:13px;text-align:right}
 input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:var(--panel2);border:1px solid var(--line);outline:none}
@@ -191,13 +191,14 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:none;border-ra
       <div class="pad" id="mot-3"><div class="num"><span>M3 · Espalda Izq</span><span class="pwm">0</span></div><div class="level"><div></div></div></div>
       <div class="pad" id="mot-4"><div class="num"><span>M4 · Espalda Der</span><span class="pwm">0</span></div><div class="level"><div></div></div></div>
     </div>
+    <div class="legend" id="mot-cap" style="margin-top:10px">Recorte PWM por voltaje</div>
     <div class="dmg-pulse" id="dmg-pulse"></div>
   </section>
 
   <section class="panel col-4">
     <h2>Salidas · Actuadores</h2>
     <div class="btn" id="out-sol" style="margin-bottom:10px"><div class="dot"></div><div><div class="label">SOLENOIDE</div><div class="sub">retroceso del guante</div></div></div>
-    <div class="btn" id="out-ele"><div class="dot"></div><div><div class="label">ELECTRODOS</div><div class="sub">rele controlado</div></div></div>
+    <div class="btn" id="out-pel"><div class="dot"></div><div><div class="label">PELTIER</div><div class="sub">golpe termico (pulso)</div></div></div>
     <div class="kv" style="margin-top:14px">
       <span class="k">Zona dano</span><span class="v" id="dmg-zone">-</span>
     </div>
@@ -251,7 +252,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:none;border-ra
         <button class="cbtn" data-cmd="DMG=2">DANO M2</button>
         <button class="cbtn" data-cmd="DMG=3">DANO M3</button>
         <button class="cbtn" data-cmd="DMG=4">DANO M4</button>
-        <button class="cbtn" data-cmd="ELEC=1">ELECTRODOS</button>
+        <button class="cbtn" data-cmd="PELT=1">PELTIER</button>
         <button class="cbtn bad" id="btn-stop">APAGAR MOTORES</button>
       </div>
       <div class="raw-row">
@@ -269,6 +270,11 @@ const N=200;
 const buf={ax:new Float32Array(N),ay:new Float32Array(N),az:new Float32Array(N),gx:new Float32Array(N),gy:new Float32Array(N),gz:new Float32Array(N)};
 let wIdx=0,frames=0,lastRate=performance.now();
 let lastDmgZone=0;
+// Voltajes que reporta el ESP: VMOT = tope de los motores (100% del slider),
+// VBAT = pack completo. El recorte vive en el firmware; aqui solo se muestra
+// el voltaje equivalente a cada nivel de PWM (intensidad/255 * VMOT).
+let VMOT=3.0,VBAT=0;
+const motVolts=(v)=>((v/255)*VMOT).toFixed(2)+'V';
 
 function pushSample(d){
   buf.ax[wIdx]=d.ax;buf.ay[wIdx]=d.ay;buf.az[wIdx]=d.az;
@@ -375,16 +381,20 @@ function apply(d){
 
   pushSample(d);
 
+  if(d.vm)VMOT=d.vm;
+  if(d.vb)VBAT=d.vb;
+  $('mot-cap').textContent='Tope '+VMOT.toFixed(2)+' V (100%) · bateria '+VBAT.toFixed(2)+' V';
+
   for(let i=0;i<4;i++){
     const pad=$('mot-'+(i+1));
     const v=d.m[i]|0;
     pad.querySelector('.level>div').style.width=(v*100/255)+'%';
-    pad.querySelector('.pwm').textContent=v;
+    pad.querySelector('.pwm').textContent=v+' · '+motVolts(v);
     pad.classList.toggle('on',v>0);
   }
 
   setBtn($('out-sol'),d.sol);
-  setBtn($('out-ele'),d.ele);
+  setBtn($('out-pel'),d.pel);
 
   if(d.dz&&d.dz!==lastDmgZone){
     const p=$('dmg-pulse');
@@ -442,9 +452,12 @@ function bindSlider(id,valId){
   const sl=$(id),vEl=$(valId);
   let last=0,pending=null,timer=null;
   const key=sl.dataset.key;
+  const isMotor=key[0]==='M';
+  const showVal=()=>{vEl.textContent=isMotor?(sl.value+' · '+motVolts(sl.value)):sl.value;};
+  showVal();
   const flush=()=>{timer=null;if(pending!==null){sendCmd(key+'='+pending);pending=null;}};
   sl.addEventListener('input',()=>{
-    vEl.textContent=sl.value;
+    showVal();
     const now=performance.now();
     if(now-last>70){last=now;sendCmd(key+'='+sl.value);}
     else{pending=sl.value;if(!timer)timer=setTimeout(flush,80);}
@@ -459,7 +472,7 @@ document.querySelectorAll('.cbtn[data-cmd]').forEach(b=>{
 });
 
 $('btn-stop').addEventListener('click',()=>{
-  ['m1','m2','m3','m4'].forEach(k=>{$('sl-'+k).value=0;$('sv-'+k).textContent='0';});
+  ['m1','m2','m3','m4'].forEach(k=>{$('sl-'+k).value=0;$('sv-'+k).textContent='0 · '+motVolts(0);});
   sendCmd('M1=0;M2=0;M3=0;M4=0');
 });
 

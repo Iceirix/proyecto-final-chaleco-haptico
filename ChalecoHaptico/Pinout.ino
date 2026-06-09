@@ -21,8 +21,8 @@ void InitPinout()
   pinMode(SOLENOID_PIN, OUTPUT);
   digitalWrite(SOLENOID_PIN, LOW);
 
-  pinMode(ELECTRODE_RELAY_PIN, OUTPUT);
-  digitalWrite(ELECTRODE_RELAY_PIN, LOW);
+  pinMode(PELTIER_RELAY_PIN, OUTPUT);
+  digitalWrite(PELTIER_RELAY_PIN, LOW);
 }
 
 void InitI2CBus()

@@ -251,7 +251,7 @@ static String UrlDecode(const String& s)
 
 // Atiende GET /cmd?c=<comando>. El comando reusa exactamente el mismo parser
 // que Unity/Serial (ProcessRxLine en ProtocolReceive.ino), asi que acepta el
-// formato "M1=128;HP=80;SOL=1;DMG=2;ELEC=0".
+// formato "M1=128;HP=80;SOL=1;DMG=2;PELT=0".
 static void HandleCommandRequest()
 {
   String cmd = "";
@@ -298,11 +298,12 @@ static void SendDashboardFrame()
   // Numero de estaciones conectadas al softAP (telefono, PC, etc.).
   int wifiClients = (int)WiFi.softAPgetStationNum();
 
-  // Captura la zona de dano pendiente y limpia la marca para que el navegador
-  // solo vea un pulso por evento (sin perder sincronia con la barra de vida).
-  int dmgZone = damageZoneTrigger;
+  // Zona de dano con un toque en curso: se mantiene mientras dura el patron
+  // (~400 ms), asi el navegador alcanza a verla y dispara el flash una vez.
+  // No se puede usar damageZoneTrigger: UpdateVibrationMotors ya lo limpio.
+  int dmgZone = activeDamageZone;
 
-  char buf[480];
+  char buf[520];
   int n = snprintf(buf, sizeof(buf),
     "data: {"
       "\"j\":%d,\"s\":%d,\"w\":%d,\"b3\":%d,\"b4\":%d,"
@@ -311,8 +312,8 @@ static void SendDashboardFrame()
       "\"r\":%.2f,\"p\":%.2f,\"wp\":%d,\"wa\":%d,"
       "\"ax\":%.3f,\"ay\":%.3f,\"az\":%.3f,"
       "\"gx\":%.2f,\"gy\":%.2f,\"gz\":%.2f,"
-      "\"m\":[%d,%d,%d,%d],"
-      "\"sol\":%d,\"ele\":%d,\"hp\":%d,\"dz\":%d,"
+      "\"m\":[%d,%d,%d,%d],\"vm\":%.2f,\"vb\":%.2f,"
+      "\"sol\":%d,\"pel\":%d,\"hp\":%d,\"dz\":%d,"
       "\"u\":%d,\"wc\":%d,\"up\":%lu"
     "}\n\n",
     jump ? 1 : 0,
@@ -325,9 +326,10 @@ static void SendDashboardFrame()
     rollAngle, pitchAngle, weaponIndex, weaponGestureArmed ? 1 : 0,
     accX, accY, accZ,
     gyrX, gyrY, gyrZ,
-    motorTarget[0], motorTarget[1], motorTarget[2], motorTarget[3],
+    motorLevel[0], motorLevel[1], motorLevel[2], motorLevel[3],
+    (float)MOTOR_RATED_VOLTAGE, (float)BATTERY_PACK_VOLTAGE,
     solenoidActive ? 1 : 0,
-    electrodeActive ? 1 : 0,
+    peltierActive ? 1 : 0,
     healthPercent,
     dmgZone,
     (client && client.connected()) ? 1 : 0,

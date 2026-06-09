@@ -31,7 +31,7 @@ void DebugPrintAll()
                   "M3",
                   "M4",
                   "S",
-                  "E",
+                  "P",
                   "HP",
                   "WIFI");
     debugRowsUntilHeader = 20;
@@ -59,7 +59,7 @@ void DebugPrintAll()
                 motorTarget[2],
                 motorTarget[3],
                 solenoidActive ? 1 : 0,
-                electrodeActive ? 1 : 0,
+                peltierActive ? 1 : 0,
                 healthPercent,
                 (client && client.connected()) ? "OK" : "WAIT");
 

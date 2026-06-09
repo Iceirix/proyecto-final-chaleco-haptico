@@ -24,22 +24,52 @@
 #define IMU_SDA_PIN 21
 #define IMU_SCL_PIN 22
 
-// 4 zonas del chaleco: PCB MOT2..MOT5.
+// 4 zonas del chaleco. Firmware M1..M4 -> pads de la PCB.
+//   M1 = MOT2 (GPIO17)
+//   M2 = MOT7 (GPIO18)  <- reubicado: el TIP120 del pad MOT3 (GPIO25) se quemo,
+//                          asi que M2 se cablea al pad libre MOT7. Si reparas el
+//                          TIP120, vuelve a poner MOTOR2_PIN en 25.
+//   M3 = MOT4 (GPIO26)
+//   M4 = MOT5 (GPIO27)
 #define MOTOR1_PIN 17
-#define MOTOR2_PIN 25
+#define MOTOR2_PIN 18
 #define MOTOR3_PIN 26
 #define MOTOR4_PIN 27
 
 // Salidas disponibles pero no usadas por defecto.
 // MOT8 (GPIO19) ahora se usa como solenoide; GPIO0 queda libre (problemas de boot).
+// MOT7 (GPIO18) paso a usarse para M2 (ver arriba). MOT3 (GPIO25) queda libre
+// pero con el TIP120 quemado: no usar hasta repararlo.
 #define MOTOR_OPTION_MOT1_PIN 12
-#define MOTOR_OPTION_MOT7_PIN 18
+#define MOTOR_OPTION_MOT3_PIN 25
+
+// Limite de voltaje de los motores vibradores.
+// La bateria entrega mas voltaje del que aguantan los motores (3 V), asi que el
+// PWM se recorta para que el promedio entregado nunca pase de MOTOR_RATED_VOLTAGE.
+// El slider del dashboard y los comandos M1..M4 de Unity conservan rango completo
+// 0..255 (0% = 0 V, 100% = MOTOR_RATED_VOLTAGE); el recorte ocurre en WriteMotor().
+// Si tus celdas miden distinto (p.ej. salen a 4.0 V cargadas en vez de los 3.7 V
+// nominales), cambia solo BATTERY_CELL_VOLTAGE y el limite se recalcula solo.
+#define BATTERY_CELL_VOLTAGE 4.0f   // voltaje real medido por celda (nominal 3.7)
+#define BATTERY_CELL_COUNT   2      // celdas de litio en serie
+#define MOTOR_RATED_VOLTAGE  3.0f   // voltaje nominal maximo de los motores
+
+// Voltaje total del pack (celdas en serie). Macro para que VibrationMotors.ino y
+// Dashboard.ino lo vean sin depender del orden de concatenacion de los .ino.
+#define BATTERY_PACK_VOLTAGE (BATTERY_CELL_VOLTAGE * BATTERY_CELL_COUNT)
 
 // Actuadores.
 // Solenoide reasignado a MOT8 (GPIO19) — GPIO0 daba problemas (pin de boot).
 #define SOLENOID_PIN 19
-#define ELECTRODE_RELAY_PIN 4
-#define ENABLE_ELECTRODE_RELAY 1
+
+// Celda Peltier (antes electrodos): se controla por un rele de 5 V via TIP120.
+// Es un golpe termico temporizado por evento del juego. Una Peltier necesita
+// segundos encendida para notarse, asi que el pulso es largo (no 80 ms como el
+// viejo electrodo, que por eso "no se activaba"). ENABLE_PELTIER bloquea la
+// salida fisica si se pone en 0. PELTIER_PULSE_MS = duracion del golpe.
+#define PELTIER_RELAY_PIN 4
+#define ENABLE_PELTIER 1
+#define PELTIER_PULSE_MS 4000
 
 // Barra de vida.
 #define NEOPIXEL_PIN 2
