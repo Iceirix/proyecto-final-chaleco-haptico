@@ -12,7 +12,7 @@
 //    - solenoide de retroceso en el guante
 //    - 4 motores vibradores PWM en el chaleco
 //    - barra de vida NeoPixel
-//    - rele de electrodos, bloqueado por software hasta validacion fisica
+//    - celda Peltier (golpe termico) via rele, con bandera de habilitacion
 //
 //  Comunica:
 //    - WiFi TCP, ESP32 como Access Point en 192.175.5.1:80 (Unity)
@@ -43,7 +43,7 @@ void setup()
   InitInputs();
   InitVibrationMotors();
   InitSolenoid();
-  InitElectrodeRelay();
+  InitPeltier();
   InitHealthBar();
 
   InitI2CBus();
@@ -65,7 +65,7 @@ void loop()
 
   UpdateVibrationMotors();
   UpdateSolenoid();
-  UpdateElectrodeRelay();
+  UpdatePeltier();
   UpdateHealthBar();
 
   unsigned long now = millis();

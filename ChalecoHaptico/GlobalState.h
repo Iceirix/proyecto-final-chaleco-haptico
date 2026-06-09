@@ -67,10 +67,12 @@ float accAngleXFil = 0.0f, accAngleYFil = 0.0f;
 unsigned long imuLastUs = 0;
 
 // Comandos de Unity.
-int motorTarget[4] = {0, 0, 0, 0};
+int motorTarget[4] = {0, 0, 0, 0};   // PWM continuo pedido por los sliders/Unity (intensidad 0..255)
+int motorLevel[4] = {0, 0, 0, 0};    // intensidad realmente escrita al pin (incluye toques de dano); es lo que ve el dashboard
+int activeDamageZone = 0;            // zona 1..4 con un toque de dano en curso (0 = ninguno); para el flash del dashboard
 int healthPercent = 100;
 bool solenoidTrigger = false;
-bool electrodeTrigger = false;
+bool peltierTrigger = false;
 int damageZoneTrigger = 0;
 bool damageFlashTrigger = false;
 
@@ -79,7 +81,7 @@ bool solenoidActive = false;
 unsigned long solenoidEndMs = 0;
 unsigned long solenoidReadyMs = 0;
 
-bool electrodeActive = false;
-unsigned long electrodeEndMs = 0;
+bool peltierActive = false;
+unsigned long peltierEndMs = 0;
 
 #endif

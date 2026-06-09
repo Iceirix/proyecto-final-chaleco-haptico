@@ -8,6 +8,12 @@
 
 const int PWM_MAX_DUTY = 255;
 
+// Duty maximo real (0..255) que mantiene el promedio entregado en
+// MOTOR_RATED_VOLTAGE. Con pack 8 V y motor 3 V => 255*3/8 ~= 96. Se recalcula
+// en InitVibrationMotors a partir de los voltajes de HardwareConfig.h, asi que
+// cambiar BATTERY_CELL_VOLTAGE basta para reajustar el limite.
+int motorMaxDuty = PWM_MAX_DUTY;
+
 const unsigned long TAP_ON_MS = 80;
 const unsigned long TAP_OFF_MS = 60;
 const int TAP_PULSES = 3;
@@ -24,8 +30,24 @@ struct DamagePattern
 
 DamagePattern dmg[4];
 
+// Calcula el duty maximo seguro segun los voltajes configurados. Si el pack no
+// supera al motor no hay recorte. Se llama una vez al arrancar.
+void ComputeMotorMaxDuty()
+{
+  if (BATTERY_PACK_VOLTAGE <= MOTOR_RATED_VOLTAGE)
+  {
+    motorMaxDuty = PWM_MAX_DUTY;
+    return;
+  }
+  int d = (int)lroundf((float)PWM_MAX_DUTY * MOTOR_RATED_VOLTAGE / BATTERY_PACK_VOLTAGE);
+  if (d < 1) d = 1;
+  if (d > PWM_MAX_DUTY) d = PWM_MAX_DUTY;
+  motorMaxDuty = d;
+}
+
 void InitVibrationMotors()
 {
+  ComputeMotorMaxDuty();
   for (int i = 0; i < 4; i++)
   {
     pinMode(motorPins[i], OUTPUT);
@@ -43,6 +65,7 @@ void StartDamageTap(int zone)
   dmg[i].pulsesLeft = TAP_PULSES;
   dmg[i].onPhase = true;
   dmg[i].phaseEndMs = millis() + TAP_ON_MS;
+  activeDamageZone = zone;  // visible en el dashboard mientras dura el patron
   WriteMotor(i, PWM_MAX_DUTY);
 }
 
@@ -71,6 +94,7 @@ void UpdateVibrationMotors()
           if (dmg[i].pulsesLeft <= 0)
           {
             dmg[i].active = false;
+            if (activeDamageZone == i + 1) activeDamageZone = 0;
           }
         }
         else
@@ -92,6 +116,14 @@ void WriteMotor(int index, int duty)
 {
   if (index < 0 || index >= 4) return;
   if (duty < 0) duty = 0;
-  if (duty > 255) duty = 255;
-  analogWrite(motorPins[index], duty);
+  if (duty > PWM_MAX_DUTY) duty = PWM_MAX_DUTY;
+  // Guarda la intensidad realmente aplicada (0..255, antes del recorte de
+  // voltaje) para que el dashboard muestre la salida viva, incluidos los toques
+  // de dano y no solo el valor de los sliders (motorTarget).
+  motorLevel[index] = duty;
+  // Recorta el promedio a MOTOR_RATED_VOLTAGE: la intensidad pedida (0..255) se
+  // mapea al rango fisico seguro (0..motorMaxDuty). Aplica tambien a los toques
+  // de dano, que llaman aqui con PWM_MAX_DUTY y tampoco deben pasar de 3 V.
+  int scaled = (int)((long)duty * motorMaxDuty / PWM_MAX_DUTY);
+  analogWrite(motorPins[index], scaled);
 }

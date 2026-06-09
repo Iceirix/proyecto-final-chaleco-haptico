@@ -2,7 +2,7 @@
 //  ProtocolReceive.ino - Parser de comandos entrantes desde Unity.
 //
 //  Formato recomendado, terminado en salto de linea:
-//    M1=0;M2=0;M3=0;M4=0;SOL=0;HP=100;DMG=1;ELEC=0
+//    M1=0;M2=0;M3=0;M4=0;SOL=0;HP=100;DMG=1;PELT=0
 //
 //  El mismo formato tambien se puede escribir manualmente en el monitor Serial
 //  para probar actuadores sin interrumpir la comunicacion normal por WiFi.
@@ -11,7 +11,8 @@
 //  SOL: pulso de solenoide para retroceso.
 //  HP: vida 0..100 para NeoPixel.
 //  DMG: golpe haptico en zona 1..4 + flash rojo.
-//  ELEC: pulso del rele de electrodos. Solo actua si ENABLE_ELECTRODE_RELAY=1.
+//  PELT: golpe termico de la celda Peltier (pulso largo). Solo actua si
+//        ENABLE_PELTIER=1. ELEC y REL son alias de PELT por compatibilidad.
 // ============================================================================
 
 String wifiRxBuffer = "";
@@ -115,8 +116,9 @@ void ApplyToken(const String& token)
   else if (key == "M4")   motorTarget[3] = ClampByte(v);
   else if (key == "SOL")  solenoidTrigger = (v != 0);
   else if (key == "HP")   healthPercent = ClampInt(v, 0, 100);
-  else if (key == "ELEC") electrodeTrigger = (v != 0);
-  else if (key == "REL")  electrodeTrigger = (v != 0); // alias de compatibilidad
+  else if (key == "PELT") peltierTrigger = (v != 0);
+  else if (key == "ELEC") peltierTrigger = (v != 0); // alias: la salida ahora es Peltier
+  else if (key == "REL")  peltierTrigger = (v != 0); // alias de compatibilidad
   else if (key == "DMG")
   {
     if (v >= 1 && v <= 4)
