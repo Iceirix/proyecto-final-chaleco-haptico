@@ -14,26 +14,35 @@
 //  ya este conectado). El puerto 81 sirve el dashboard. Hasta
 //  DASHBOARD_MAX_STREAMS dispositivos pueden ver telemetria a la vez: cada uno
 //  ocupa un slot en dashboardClients[] y recibe la misma trama SSE.
+//
+//  Las peticiones cortas (pagina y /cmd) van por slots keep-alive
+//  (dashboardReqClients[]): el navegador reusa UNA conexion para todos los
+//  comandos de un arrastre de slider. No volver a "Connection: close" aqui —
+//  abrir una conexion TCP por comando agota los PCB de lwIP (los cerrados
+//  quedan en TIME_WAIT) y lwIP termina matando el stream SSE o el socket de
+//  Unity. Un slot inactivo DASHBOARD_REQ_IDLE_MS se cierra para liberarlo.
 // ============================================================================
 
 #if ENABLE_DASHBOARD
 
 #include "DashboardPage.h"
 
-static void HandleDashboardRequest();
-static void ServeHtmlPage();
+static void HandleDashboardRequest(int slot);
+static void ServeHtmlPage(int slot);
 static void StartSseStream(WiFiClient& c);
-static void HandleCommandRequest();
-static void Send404();
+static void HandleCommandRequest(int slot);
+static void Send404(int slot);
 static void SendDashboardFrame();
 static int DashboardStreamCount();
+static void ResetReqSlotState(int slot);
+static void ReleaseReqSlot(int slot);
 static String UrlDecode(const String& s);
 
 void InitDashboard()
 {
   dashboardServer.begin();
   dashboardServer.setNoDelay(true);
-  Serial.print("Dashboard listo en http://");
+  Serial.print("Dashboard v3 listo en http://");
   Serial.print(WiFi.softAPIP());
   Serial.print(":");
   Serial.print(DASHBOARD_PORT);
@@ -42,6 +51,8 @@ void InitDashboard()
 
 void UpdateDashboard()
 {
+  unsigned long now = millis();
+
   // Mantenimiento: libera los slots de streaming cuyo dispositivo cerro la
   // pestana, para que otro dispositivo pueda reusar el socket.
   for (int i = 0; i < DASHBOARD_MAX_STREAMS; i++)
@@ -49,55 +60,74 @@ void UpdateDashboard()
     if (dashboardClients[i] && !dashboardClients[i].connected())
     {
       dashboardClients[i].stop();
+      dashboardStreamStrikes[i] = 0;
     }
   }
 
-  // Acepta una peticion HTTP corta en un cliente transitorio aparte, para no
-  // bloquear los streams SSE persistentes.
-  if (!dashboardReqClient || !dashboardReqClient.connected())
+  // Mantenimiento de los slots keep-alive: cierra los desconectados y los que
+  // llevan demasiado tiempo sin mandar nada (para que otro dispositivo entre).
+  for (int i = 0; i < DASHBOARD_MAX_REQ; i++)
   {
+    if (!dashboardReqClients[i]) continue;
+    if (!dashboardReqClients[i].connected())
+    {
+      ReleaseReqSlot(i);
+    }
+    else if (now - dashboardReqLastMs[i] > DASHBOARD_REQ_IDLE_MS)
+    {
+      dashboardReqClients[i].stop();
+      ReleaseReqSlot(i);
+    }
+  }
+
+  // Acepta conexiones nuevas mientras haya slots libres.
+  for (int i = 0; i < DASHBOARD_MAX_REQ; i++)
+  {
+    if (dashboardReqClients[i]) continue;
     WiFiClient incoming = dashboardServer.available();
-    if (incoming)
-    {
-      dashboardReqClient = incoming;
-      dashboardReqClient.setNoDelay(true);
-      dashboardRxBuffer = "";
-      dashboardMethod = "";
-      dashboardPath = "";
-    }
+    if (!incoming) break;
+    dashboardReqClients[i] = incoming;
+    dashboardReqClients[i].setNoDelay(true);
+    ResetReqSlotState(i);
+    dashboardReqLastMs[i] = now;
   }
 
-  // Lee la peticion del cliente transitorio hasta la linea en blanco.
-  if (dashboardReqClient && dashboardReqClient.connected())
+  // Lee cada slot hasta la linea en blanco que cierra las cabeceras. Como la
+  // conexion es persistente, despues de atender una peticion el mismo socket
+  // puede traer la siguiente.
+  for (int s = 0; s < DASHBOARD_MAX_REQ; s++)
   {
-    while (dashboardReqClient.available())
+    if (!dashboardReqClients[s] || !dashboardReqClients[s].connected()) continue;
+
+    while (dashboardReqClients[s].available())
     {
-      char c = dashboardReqClient.read();
+      char c = dashboardReqClients[s].read();
+      dashboardReqLastMs[s] = now;
       if (c == '\r') continue;
       if (c == '\n')
       {
-        if (dashboardRxBuffer.length() == 0)
+        if (dashboardRxBuffer[s].length() == 0)
         {
           // Linea en blanco -> fin de cabeceras, ya tenemos la ruta.
-          HandleDashboardRequest();
+          HandleDashboardRequest(s);
           break;
         }
-        if (dashboardMethod.length() == 0)
+        if (dashboardMethod[s].length() == 0)
         {
-          int sp1 = dashboardRxBuffer.indexOf(' ');
-          int sp2 = dashboardRxBuffer.indexOf(' ', sp1 + 1);
+          int sp1 = dashboardRxBuffer[s].indexOf(' ');
+          int sp2 = dashboardRxBuffer[s].indexOf(' ', sp1 + 1);
           if (sp1 > 0 && sp2 > sp1)
           {
-            dashboardMethod = dashboardRxBuffer.substring(0, sp1);
-            dashboardPath = dashboardRxBuffer.substring(sp1 + 1, sp2);
+            dashboardMethod[s] = dashboardRxBuffer[s].substring(0, sp1);
+            dashboardPath[s] = dashboardRxBuffer[s].substring(sp1 + 1, sp2);
           }
         }
-        dashboardRxBuffer = "";
+        dashboardRxBuffer[s] = "";
       }
       else
       {
-        dashboardRxBuffer += c;
-        if (dashboardRxBuffer.length() > 256) dashboardRxBuffer = "";
+        dashboardRxBuffer[s] += c;
+        if (dashboardRxBuffer[s].length() > 256) dashboardRxBuffer[s] = "";
       }
     }
   }
@@ -106,7 +136,6 @@ void UpdateDashboard()
   // cada DASHBOARD_PERIOD_MS. Se construye una sola vez y se reparte.
   if (DashboardStreamCount() > 0)
   {
-    unsigned long now = millis();
     if (now - dashboardLastMs >= DASHBOARD_PERIOD_MS)
     {
       dashboardLastMs = now;
@@ -126,45 +155,62 @@ static int DashboardStreamCount()
   return count;
 }
 
-static void HandleDashboardRequest()
+// Limpia el estado de parseo de un slot (la conexion sigue viva).
+static void ResetReqSlotState(int slot)
 {
-  if (dashboardPath == "/" || dashboardPath == "/index.html")
+  dashboardRxBuffer[slot] = "";
+  dashboardMethod[slot] = "";
+  dashboardPath[slot] = "";
+}
+
+// Suelta el slot por completo (socket ya cerrado o transferido a streaming).
+static void ReleaseReqSlot(int slot)
+{
+  dashboardReqClients[slot] = WiFiClient();
+  ResetReqSlotState(slot);
+}
+
+static void HandleDashboardRequest(int slot)
+{
+  if (dashboardPath[slot] == "/" || dashboardPath[slot] == "/index.html")
   {
-    ServeHtmlPage();
-    dashboardReqClient.stop();
+    ServeHtmlPage(slot);
+    ResetReqSlotState(slot); // keep-alive: el socket queda esperando la siguiente
   }
-  else if (dashboardPath == "/stream")
+  else if (dashboardPath[slot] == "/stream")
   {
     // Busca un slot de streaming libre para este dispositivo. Asi varios
     // celulares/PCs pueden ver el dashboard a la vez, cada uno con su socket.
-    int slot = -1;
+    int free = -1;
     for (int i = 0; i < DASHBOARD_MAX_STREAMS; i++)
     {
-      if (!dashboardClients[i] || !dashboardClients[i].connected()) { slot = i; break; }
+      if (!dashboardClients[i] || !dashboardClients[i].connected()) { free = i; break; }
     }
-    if (slot < 0)
+    if (free < 0)
     {
       // Todos los slots ocupados: desaloja el mas antiguo (slot 0) para el nuevo.
       dashboardClients[0].stop();
-      slot = 0;
+      free = 0;
     }
-    dashboardClients[slot] = dashboardReqClient;
-    dashboardReqClient = WiFiClient(); // libera el slot transitorio sin cerrar el socket
-    StartSseStream(dashboardClients[slot]);
+    dashboardClients[free] = dashboardReqClients[slot];
+    dashboardStreamStrikes[free] = 0;
+    ReleaseReqSlot(slot); // libera el slot sin cerrar el socket (ya vive en streaming)
+    StartSseStream(dashboardClients[free]);
   }
-  else if (dashboardPath.startsWith("/cmd"))
+  else if (dashboardPath[slot].startsWith("/cmd"))
   {
-    HandleCommandRequest();
-    dashboardReqClient.stop();
+    HandleCommandRequest(slot);
+    ResetReqSlotState(slot); // keep-alive: el siguiente comando llega por aqui mismo
   }
   else
   {
-    Send404();
-    dashboardReqClient.stop();
+    Send404(slot);
+    dashboardReqClients[slot].stop();
+    ReleaseReqSlot(slot);
   }
 }
 
-static void ServeHtmlPage()
+static void ServeHtmlPage(int slot)
 {
   const size_t pageLen = sizeof(DASHBOARD_HTML) - 1; // sin el nulo final
 
@@ -174,19 +220,19 @@ static void ServeHtmlPage()
     "Content-Type: text/html; charset=utf-8\r\n"
     "Content-Length: %u\r\n"
     "Cache-Control: no-store\r\n"
-    "Connection: close\r\n"
+    "Connection: keep-alive\r\n"
     "\r\n",
     (unsigned)pageLen);
-  dashboardReqClient.write((const uint8_t*)header, hn);
+  dashboardReqClients[slot].write((const uint8_t*)header, hn);
 
   // Envia el cuerpo en bloques para no acaparar la pila TCP.
   const size_t CHUNK = 512;
   size_t sent = 0;
-  while (sent < pageLen && dashboardReqClient.connected())
+  while (sent < pageLen && dashboardReqClients[slot].connected())
   {
     size_t n = pageLen - sent;
     if (n > CHUNK) n = CHUNK;
-    dashboardReqClient.write((const uint8_t*)(DASHBOARD_HTML + sent), n);
+    dashboardReqClients[slot].write((const uint8_t*)(DASHBOARD_HTML + sent), n);
     sent += n;
     yield(); // permite que la red drene
   }
@@ -206,13 +252,13 @@ static void StartSseStream(WiFiClient& c)
   dashboardLastMs = 0; // fuerza envio inmediato a todos en el siguiente tick
 }
 
-static void Send404()
+static void Send404(int slot)
 {
   const char* msg =
     "HTTP/1.1 404 Not Found\r\n"
     "Content-Length: 0\r\n"
     "Connection: close\r\n\r\n";
-  dashboardReqClient.write((const uint8_t*)msg, strlen(msg));
+  dashboardReqClients[slot].write((const uint8_t*)msg, strlen(msg));
 }
 
 // Decodifica un valor de query string (%XX y '+'). Suficiente para los comandos
@@ -252,13 +298,13 @@ static String UrlDecode(const String& s)
 // Atiende GET /cmd?c=<comando>. El comando reusa exactamente el mismo parser
 // que Unity/Serial (ProcessRxLine en ProtocolReceive.ino), asi que acepta el
 // formato "M1=128;HP=80;SOL=1;DMG=2;PELT=0".
-static void HandleCommandRequest()
+static void HandleCommandRequest(int slot)
 {
   String cmd = "";
-  int q = dashboardPath.indexOf('?');
+  int q = dashboardPath[slot].indexOf('?');
   if (q >= 0)
   {
-    String query = dashboardPath.substring(q + 1);
+    String query = dashboardPath[slot].substring(q + 1);
     int start = 0;
     while (start < (int)query.length())
     {
@@ -287,10 +333,10 @@ static void HandleCommandRequest()
     "Content-Type: text/plain\r\n"
     "Content-Length: 2\r\n"
     "Cache-Control: no-store\r\n"
-    "Connection: close\r\n"
+    "Connection: keep-alive\r\n"
     "\r\n"
     "OK";
-  dashboardReqClient.write((const uint8_t*)ok, strlen(ok));
+  dashboardReqClients[slot].write((const uint8_t*)ok, strlen(ok));
 }
 
 static void SendDashboardFrame()
@@ -338,12 +384,37 @@ static void SendDashboardFrame()
 
   if (n > 0 && n < (int)sizeof(buf))
   {
-    // Reparte la misma trama a cada dispositivo con el stream abierto.
+    // Reparte la misma trama a cada dispositivo con el stream abierto. Antes
+    // de escribir se sondea el socket con select() de timeout cero: si el
+    // buffer TCP de un cliente no drena (p.ej. quedo zombi tras recargar la
+    // pagina en el celular), WiFiClient::write() reintentaria con esperas de
+    // ~1 s y congelaria el loop completo (uptime detenido, 0 Hz, Unity sin
+    // tramas). Al cliente atascado se le salta la trama y tras
+    // DASHBOARD_STREAM_MAX_STRIKES seguidas se desaloja su slot.
     for (int i = 0; i < DASHBOARD_MAX_STREAMS; i++)
     {
-      if (dashboardClients[i] && dashboardClients[i].connected())
+      if (!dashboardClients[i] || !dashboardClients[i].connected()) continue;
+
+      int sockfd = dashboardClients[i].fd();
+      bool writable = false;
+      if (sockfd >= 0)
+      {
+        fd_set wset;
+        FD_ZERO(&wset);
+        FD_SET(sockfd, &wset);
+        struct timeval tv = {0, 0};
+        writable = (select(sockfd + 1, NULL, &wset, NULL, &tv) > 0) && FD_ISSET(sockfd, &wset);
+      }
+
+      if (writable)
       {
         dashboardClients[i].write((const uint8_t*)buf, n);
+        dashboardStreamStrikes[i] = 0;
+      }
+      else if (++dashboardStreamStrikes[i] >= DASHBOARD_STREAM_MAX_STRIKES)
+      {
+        dashboardClients[i].stop();
+        dashboardStreamStrikes[i] = 0;
       }
     }
   }
