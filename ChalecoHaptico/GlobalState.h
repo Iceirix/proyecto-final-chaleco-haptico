@@ -17,10 +17,16 @@ DNSServer dnsServer;
 #if ENABLE_DASHBOARD
 WiFiServer dashboardServer(DASHBOARD_PORT);
 WiFiClient dashboardClients[DASHBOARD_MAX_STREAMS]; // streams SSE persistentes, uno por dispositivo
-WiFiClient dashboardReqClient;   // peticiones HTTP cortas (pagina, /cmd)
-String dashboardRxBuffer = "";
-String dashboardMethod = "";
-String dashboardPath = "";
+uint8_t dashboardStreamStrikes[DASHBOARD_MAX_STREAMS] = {0}; // tramas seguidas sin poder escribir (cliente zombi)
+// Peticiones HTTP (pagina, /cmd) en slots keep-alive: el navegador reusa una
+// sola conexion para todos los comandos. Abrir una conexion por comando (como
+// antes) agotaba los PCB TCP de lwIP al arrastrar un slider y lwIP terminaba
+// matando conexiones activas, incluido el stream SSE.
+WiFiClient dashboardReqClients[DASHBOARD_MAX_REQ];
+String dashboardRxBuffer[DASHBOARD_MAX_REQ];
+String dashboardMethod[DASHBOARD_MAX_REQ];
+String dashboardPath[DASHBOARD_MAX_REQ];
+unsigned long dashboardReqLastMs[DASHBOARD_MAX_REQ] = {0};
 unsigned long dashboardLastMs = 0;
 #endif
 

@@ -92,6 +92,9 @@
 #define DASHBOARD_PORT 81
 #define DASHBOARD_PERIOD_MS 40   // 25 Hz - mitad del rate de Unity
 #define DASHBOARD_MAX_STREAMS 4  // dispositivos que pueden ver el dashboard a la vez (cada uno usa un socket)
+#define DASHBOARD_MAX_REQ 2      // conexiones keep-alive simultaneas para pagina y /cmd (una por dispositivo activo)
+#define DASHBOARD_REQ_IDLE_MS 2000      // cierra una conexion keep-alive sin actividad para liberar el slot
+#define DASHBOARD_STREAM_MAX_STRIKES 25 // tramas SSE seguidas sin drenar (~1 s) antes de desalojar un cliente zombi
 
 // Hostname amigable. Se anuncia via mDNS (chaleco.local) y un servidor DNS
 // captivo embebido lo resuelve aunque el celular no soporte mDNS.
