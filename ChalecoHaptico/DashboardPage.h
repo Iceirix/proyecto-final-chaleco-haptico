@@ -258,7 +258,7 @@ canvas{display:block;width:100%;height:120px;background:#0c0a09;border:1px solid
 
   <section class="panel col-3">
     <h2>Gatillo <span class="tag">flex</span></h2>
-    <div class="fire"><span class="led" id="shoot-led"></span><b>DISPARO</b><span>flex bajo umbral</span></div>
+    <div class="fire"><span class="led" id="shoot-led"></span><b>DISPARO</b><span>flex sobre umbral</span></div>
     <div class="bar" id="flex-bar"><div class="fill"></div><div class="mark"></div></div>
     <div class="kv">
       <span class="k">VALOR</span><span class="v" id="flex-v">0</span>

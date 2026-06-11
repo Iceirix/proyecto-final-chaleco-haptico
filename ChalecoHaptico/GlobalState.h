@@ -44,8 +44,11 @@ int flexRestValue = 0;
 int flexTriggerThreshold = 0;
 
 const float JOY_DEADZONE = 0.20f;
-const int FLEX_TRIGGER_DELTA = 600;       // sin uso: umbral ahora es fijo
-const int FLEX_TRIGGER_THRESHOLD = 1000;  // umbral fijo del ADC validado en bench
+// Divisor en PCB: 3.3V - flex - GPIO36 - 1k - GND. Medido: reposo ~0, al
+// doblar sube a ~3000. Umbral = reposo + DELTA (calibrado al boot; ver
+// FLEX_TRIGGER_WHEN_BELOW en HardwareConfig.h si el sensor lee al reves).
+const int FLEX_TRIGGER_DELTA = 2000;
+const int FLEX_TRIGGER_MIN_THRESHOLD = 300;  // piso usado solo en modo "dispara bajo umbral"
 const int FLEX_TRIGGER_HYSTERESIS = 150;
 
 // IMU.

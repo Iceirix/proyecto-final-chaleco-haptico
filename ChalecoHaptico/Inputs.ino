@@ -15,9 +15,21 @@ void InitInputs()
   }
 
   flexRestValue = acc / samples;
-  // Umbral fijo de disparo: 1000 del ADC. Validado en bench, mejor que la
-  // calibracion dinamica que dependia del valor de reposo al flashear.
-  flexTriggerThreshold = FLEX_TRIGGER_THRESHOLD;
+  // Umbral relativo al reposo medido al arrancar. Con el divisor de la PCB
+  // (flex a 3.3V, 1k a GND) el sensor lee ~0 en reposo y sube al doblar.
+#if FLEX_TRIGGER_WHEN_BELOW
+  flexTriggerThreshold = flexRestValue - FLEX_TRIGGER_DELTA;
+  if (flexTriggerThreshold < FLEX_TRIGGER_MIN_THRESHOLD)
+  {
+    flexTriggerThreshold = FLEX_TRIGGER_MIN_THRESHOLD;
+  }
+#else
+  flexTriggerThreshold = flexRestValue + FLEX_TRIGGER_DELTA;
+  if (flexTriggerThreshold > 4095 - FLEX_TRIGGER_HYSTERESIS)
+  {
+    flexTriggerThreshold = 4095 - FLEX_TRIGGER_HYSTERESIS;
+  }
+#endif
 }
 
 void ReadInputs()
