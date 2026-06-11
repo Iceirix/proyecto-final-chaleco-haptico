@@ -75,10 +75,12 @@
 #define NEOPIXEL_PIN 2
 #define NEOPIXEL_COUNT 8
 
-// Flex: sensor tipo velostat (0 Ohm en reposo, 1-1000 Ohm al flexionar).
-// Con el cableado actual la lectura ADC BAJA al doblar (extendido ~alto,
-// flexionado ~bajo), asi que el gatillo dispara cuando cae bajo el umbral.
-#define FLEX_TRIGGER_WHEN_BELOW 1
+// Flex con divisor integrado en la PCB: bornera a 3.3V, nodo GPIO36 con 1k
+// a GND (el esquematico dice 56k pero la resistencia montada es de 1k).
+// Medido en bench: el ADC lee ~0 en reposo y SUBE al doblar (~3000), o sea
+// la resistencia del sensor baja al flexionar. El gatillo dispara sobre el
+// umbral; pon esto en 1 si se cambia el sensor por uno que lea al reves.
+#define FLEX_TRIGGER_WHEN_BELOW 0
 
 // Cambio de arma por giro del brazo: roll positivo avanza un arma y roll
 // negativo retrocede. Pon esto en 1 si en el guante el gesto queda invertido
