@@ -53,9 +53,11 @@ void DrawHealthBar()
   int litLeds = (hp * NEOPIXEL_COUNT + 99) / 100;
   uint32_t color = HealthColor(hp);
 
+  // La tira quedo montada al reves en el chaleco: se llena desde el ultimo LED
+  // hacia el primero, de modo que la vida baja por el extremo fisico correcto.
   for (int i = 0; i < NEOPIXEL_COUNT; i++)
   {
-    strip.setPixelColor(i, i < litLeds ? color : 0);
+    strip.setPixelColor(i, i >= (NEOPIXEL_COUNT - litLeds) ? color : 0);
   }
   strip.show();
   lastDrawnHealth = hp;
