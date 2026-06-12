@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chaleco Háptico — Documentación técnica del Proyecto Final</title>
+<style>
+  :root{
+    --bg:#0e1116;
+    --bg2:#141922;
+    --panel:#171d27;
+    --panel2:#1c2430;
+    --line:#2a3340;
+    --line2:#36424f;
+    --ink:#d7dee8;
+    --ink-dim:#8c98a7;
+    --amber:#ffb454;
+    --amber-soft:#ffcd8a;
+    --green:#5fd38d;
+    --red:#ff6b6b;
+    --blue:#6cb6ff;
+    --violet:#c690ff;
+    --mono:"SFMono-Regular",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);line-height:1.6;font-size:16px;
+  }
+  /* ---------- layout ---------- */
+  .app{display:grid;grid-template-columns:288px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#10141b,#0c0f14);
+    border-right:1px solid var(--line);padding:22px 16px;
+  }
+  nav.side h1{
+    font-size:15px;letter-spacing:.5px;margin:0 0 2px;color:var(--amber);
+    text-transform:uppercase;font-weight:700;
+  }
+  nav.side .sub{font-size:12px;color:var(--ink-dim);margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:14px}
+  nav.side a{
+    display:block;color:var(--ink-dim);text-decoration:none;font-size:13.5px;
+    padding:6px 10px;border-radius:7px;border-left:2px solid transparent;margin:1px 0;
+    transition:all .14s;
+  }
+  nav.side a:hover{color:var(--ink);background:var(--panel)}
+  nav.side a.active{color:var(--amber);background:var(--panel2);border-left-color:var(--amber)}
+  nav.side .grp{font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:#5a6573;margin:18px 0 4px 10px}
+
+  main{padding:0 0 120px;max-width:none;overflow-x:hidden}
+  .wrap{max-width:980px;margin:0 auto;padding:0 36px}
+
+  /* ---------- hero ---------- */
+  header.hero{
+    padding:64px 36px 48px;border-bottom:1px solid var(--line);
+    background:
+      radial-gradient(900px 380px at 80% -40%,rgba(255,180,84,.10),transparent 60%),
+      radial-gradient(700px 300px at 0% 0%,rgba(108,182,255,.06),transparent 55%),
+      var(--bg);
+  }
+  header.hero .wrap{padding:0 36px}
+  .tag{
+    display:inline-block;font-family:var(--mono);font-size:11.5px;letter-spacing:1px;
+    color:var(--amber);border:1px solid var(--line2);padding:4px 11px;border-radius:999px;
+    background:var(--panel);margin-bottom:18px;
+  }
+  header.hero h2{font-size:40px;line-height:1.12;margin:0 0 14px;font-weight:800;letter-spacing:-.5px}
+  header.hero h2 .em{color:var(--amber)}
+  header.hero p.lead{font-size:18px;color:var(--ink-dim);max-width:720px;margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+  .chip{
+    font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--panel2);
+    border:1px solid var(--line);padding:6px 12px;border-radius:8px;
+  }
+  .chip b{color:var(--amber-soft)}
+
+  /* ---------- sections ---------- */
+  section{padding:54px 0 8px;border-top:1px solid transparent}
+  section .wrap{scroll-margin-top:20px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber);margin:0 0 6px}
+  h3.sec{font-size:28px;margin:0 0 8px;font-weight:800;letter-spacing:-.3px}
+  h4{font-size:19px;margin:34px 0 10px;font-weight:700;color:#eef2f7}
+  h5{font-size:15px;margin:22px 0 8px;font-weight:700;color:var(--amber-soft);font-family:var(--mono);letter-spacing:.3px}
+  p{margin:12px 0}
+  .muted{color:var(--ink-dim)}
+  a.inline{color:var(--blue);text-decoration:none;border-bottom:1px dotted var(--line2)}
+  ul,ol{margin:12px 0;padding-left:22px}
+  li{margin:6px 0}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--panel2);border:1px solid var(--line);
+    color:var(--amber-soft);padding:1px 6px;border-radius:5px;white-space:nowrap}
+
+  /* ---------- callouts ---------- */
+  .note{
+    border:1px solid var(--line);border-left:3px solid var(--amber);background:var(--panel);
+    border-radius:10px;padding:14px 18px;margin:18px 0;font-size:14.5px;
+  }
+  .note.warn{border-left-color:var(--red)}
+  .note.ok{border-left-color:var(--green)}
+  .note.info{border-left-color:var(--blue)}
+  .note .h{font-family:var(--mono);font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--amber);margin-bottom:4px;display:block}
+  .note.warn .h{color:var(--red)} .note.ok .h{color:var(--green)} .note.info .h{color:var(--blue)}
+
+  /* ---------- code blocks ---------- */
+  .code{
+    border:1px solid var(--line);border-radius:11px;overflow:hidden;margin:16px 0;background:#0b0e13;
+  }
+  .code .bar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--panel);border-bottom:1px solid var(--line);padding:8px 14px;
+  }
+  .code .bar .file{font-family:var(--mono);font-size:12px;color:var(--amber-soft)}
+  .code .bar .file .ln{color:var(--ink-dim)}
+  .code .bar .cp{
+    font-family:var(--mono);font-size:11px;color:var(--ink-dim);background:var(--panel2);
+    border:1px solid var(--line);border-radius:6px;padding:3px 9px;cursor:pointer;transition:.14s;
+  }
+  .code .bar .cp:hover{color:var(--amber);border-color:var(--line2)}
+  pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:#cdd6e2}
+  pre .cm{color:#6b7785;font-style:italic}
+  pre .kw{color:var(--violet)}
+  pre .fn{color:var(--amber)}
+  pre .st{color:var(--green)}
+  pre .nm{color:var(--blue)}
+  pre .pp{color:#e08f6a}
+
+  /* ---------- tables ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--panel);color:var(--amber-soft);font-family:var(--mono);font-size:12px;letter-spacing:.4px}
+  .tbl td.mono,.tbl td .mono{font-family:var(--mono)}
+  .tbl tr:nth-child(even) td{background:rgba(255,255,255,.012)}
+  .pin{font-family:var(--mono);color:var(--amber);font-weight:600}
+  .badge{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line2)}
+  .badge.in{color:var(--blue)} .badge.out{color:var(--green)} .badge.warn{color:var(--red)} .badge.na{color:var(--ink-dim)}
+
+  /* ---------- collapsible module cards ---------- */
+  details.mod{border:1px solid var(--line);border-radius:11px;margin:12px 0;background:var(--panel);overflow:hidden}
+  details.mod>summary{
+    cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;gap:12px;
+    font-weight:700;font-size:15.5px;user-select:none;
+  }
+  details.mod>summary::-webkit-details-marker{display:none}
+  details.mod>summary .fn{font-family:var(--mono);font-size:12.5px;color:var(--amber);background:var(--bg2);
+    border:1px solid var(--line);padding:3px 9px;border-radius:6px}
+  details.mod>summary .arrow{margin-left:auto;color:var(--ink-dim);transition:.2s}
+  details.mod[open]>summary .arrow{transform:rotate(90deg);color:var(--amber)}
+  details.mod>summary .desc{color:var(--ink-dim);font-weight:400;font-size:13.5px}
+  details.mod .body{padding:4px 18px 18px;border-top:1px solid var(--line)}
+
+  /* ---------- diagram ---------- */
+  .flow{display:grid;gap:14px;margin:22px 0}
+  .flow .row{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap}
+  .node{
+    flex:1;min-width:150px;border:1px solid var(--line2);border-radius:10px;padding:13px 15px;background:var(--panel2);
+  }
+  .node .t{font-family:var(--mono);font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--amber);margin-bottom:5px}
+  .node .d{font-size:13px;color:var(--ink-dim)}
+  .node.glove{border-color:#3a4d6b} .node.glove .t{color:var(--blue)}
+  .node.brain{border-color:#6b5630;background:linear-gradient(180deg,#241d12,#1a1610)} .node.brain .t{color:var(--amber)}
+  .node.vest{border-color:#3a5a44} .node.vest .t{color:var(--green)}
+  .node.pc{border-color:#4a3a6b} .node.pc .t{color:var(--violet)}
+  .arrowline{text-align:center;color:var(--line2);font-family:var(--mono);font-size:18px;margin:-4px 0}
+
+  /* ---------- interactive playground ---------- */
+  .play{border:1px solid var(--line2);border-radius:12px;background:linear-gradient(180deg,#12161e,#0e1218);padding:20px;margin:20px 0}
+  .play h5{margin-top:0}
+  .play label{display:block;font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin:10px 0 4px}
+  .play input[type=text]{
+    width:100%;font-family:var(--mono);font-size:14px;background:#0b0e13;color:var(--amber-soft);
+    border:1px solid var(--line2);border-radius:8px;padding:10px 12px;
+  }
+  .play input[type=text]:focus{outline:none;border-color:var(--amber)}
+  .play .out{margin-top:14px}
+  .csvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+  .csvcell{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
+  .csvcell .field{font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--amber)}
+  .csvcell .val{font-family:var(--mono);font-size:15px;color:var(--ink);margin-top:2px}
+  .csvcell .mean{font-size:11px;color:var(--ink-dim);margin-top:3px}
+  .csvcell.err{border-color:var(--red)} .csvcell.err .field{color:var(--red)}
+  .btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+  .btnrow button{
+    font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--panel2);
+    border:1px solid var(--line2);border-radius:7px;padding:7px 12px;cursor:pointer;transition:.14s;
+  }
+  .btnrow button:hover{border-color:var(--amber);color:var(--amber)}
+  .cmdlog{font-family:var(--mono);font-size:13px;color:var(--green);background:#0b0e13;border:1px solid var(--line);
+    border-radius:8px;padding:12px 14px;min-height:44px;white-space:pre-wrap}
+  .cmdlog .esp{color:var(--amber)}
+  .cmdlog .bad{color:var(--red)}
+
+  /* slider sim */
+  .simrow{display:flex;align-items:center;gap:14px;margin:10px 0;flex-wrap:wrap}
+  .simrow input[type=range]{flex:1;min-width:160px;accent-color:var(--amber)}
+  .simrow .pill{font-family:var(--mono);font-size:13px;border:1px solid var(--line);border-radius:7px;padding:5px 10px;background:var(--panel);min-width:118px;text-align:center}
+  .simrow .pill b{color:var(--amber)}
+
+  /* kpi cards */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}
+  .kpi{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--panel)}
+  .kpi .n{font-family:var(--mono);font-size:26px;color:var(--amber);font-weight:700}
+  .kpi .l{font-size:12.5px;color:var(--ink-dim);margin-top:2px}
+
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){
+    .app{grid-template-columns:1fr}
+    nav.side{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line)}
+    .twocol{grid-template-columns:1fr}
+    header.hero h2{font-size:30px}
+    .wrap,header.hero .wrap{padding:0 18px}
+  }
+  .footer{border-top:1px solid var(--line);margin-top:60px;padding:30px 0;color:var(--ink-dim);font-size:13px}
+  .topbtn{position:fixed;right:22px;bottom:22px;z-index:50;font-family:var(--mono);font-size:12px;
+    background:var(--amber);color:#1a1206;border:none;border-radius:9px;padding:9px 13px;cursor:pointer;font-weight:700;
+    box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.2s}
+  .topbtn.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ============ SIDEBAR ============ -->
+<nav class="side">
+  <h1>Chaleco Háptico</h1>
+  <div class="sub">Proyecto Final · TSM · UNAM 2026-2</div>
+  <div class="grp">Panorama</div>
+  <a href="#vision">1 · Visión general</a>
+  <a href="#arquitectura">2 · Arquitectura del sistema</a>
+  <a href="#electronica">3 · Electrónica y alimentación</a>
+  <a href="#pinout">4 · Pinout de la PCB</a>
+  <div class="grp">Firmware ESP32</div>
+  <a href="#fw-loop">5 · Loop principal</a>
+  <a href="#fw-inputs">6 · Entradas (joystick/flex)</a>
+  <a href="#fw-imu">7 · IMU y cambio de arma</a>
+  <a href="#fw-actuadores">8 · Actuadores</a>
+  <a href="#fw-voltaje">9 · Límite de voltaje</a>
+  <div class="grp">Comunicación</div>
+  <a href="#proto">10 · Protocolo (interactivo)</a>
+  <a href="#wifi">11 · WiFi dual-protocolo</a>
+  <a href="#dashboard">12 · Dashboard web</a>
+  <div class="grp">Videojuego Unity</div>
+  <a href="#unity-conn">13 · Cliente TCP</a>
+  <a href="#unity-game">14 · Lógica de juego</a>
+  <div class="grp">Operación</div>
+  <a href="#probar">15 · Cómo probar</a>
+  <a href="#mapa">16 · Mapa de archivos</a>
+</nav>
+
+<main>
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">DOCUMENTACIÓN TÉCNICA · v1</span>
+    <h2>Un FPS que <span class="em">se siente</span> en el cuerpo</h2>
+    <p class="lead">Sistema mecatrónico de inmersión para un juego de disparos en Unity: un guante de control lee tus
+      gestos, un chaleco háptico te devuelve los golpes, y un ESP32 cose todo por WiFi en tiempo real.
+      Este documento explica el hardware, el firmware y los códigos, línea por línea.</p>
+    <div class="chips">
+      <span class="chip"><b>MCU:</b> ESP32-WROOM-32</span>
+      <span class="chip"><b>Enlace:</b> WiFi AP · TCP 50 Hz</span>
+      <span class="chip"><b>Salidas:</b> 4 motores · solenoide · Peltier · NeoPixel</span>
+      <span class="chip"><b>Entradas:</b> 2 joysticks · flex · IMU · 4 botones</span>
+      <span class="chip"><b>Juego:</b> Unity 6000.3</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 1 VISION ============ -->
+<section id="vision"><div class="wrap">
+  <p class="eyebrow">Sección 1</p>
+  <h3 class="sec">Visión general</h3>
+  <p>El proyecto convierte un FPS de PC en una experiencia corporal. En lugar de teclado y ratón, el jugador usa un
+  <b>guante de control</b> y viste un <b>chaleco</b> lleno de actuadores. Toda la interacción física pasa por una sola
+  placa con un ESP32, que se comporta como puente entre el mundo físico y el motor de juego.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">50&nbsp;Hz</div><div class="l">Tramas ESP→Unity (cada 20&nbsp;ms)</div></div>
+    <div class="kpi"><div class="n">11</div><div class="l">Campos de estado por trama</div></div>
+    <div class="kpi"><div class="n">4</div><div class="l">Zonas de vibración del chaleco</div></div>
+    <div class="kpi"><div class="n">25&nbsp;Hz</div><div class="l">Telemetría al dashboard web</div></div>
+  </div>
+
+  <h4>Los cinco subsistemas</h4>
+  <ul>
+    <li><b>Guante de control</b> — 2 joysticks (mover + cámara), sensor de flexión como gatillo, IMU para el giro y botones de salto/recarga.</li>
+    <li><b>Guante háptico</b> — un solenoide que golpea la mano simulando el retroceso del arma.</li>
+    <li><b>Chaleco háptico</b> — 4 motores vibradores en cuadrantes (frente-izq, frente-der, espalda-izq, espalda-der) para el daño direccional.</li>
+    <li><b>Barra de vida</b> — tira NeoPixel de 8 LEDs que muestra el HP con código de color.</li>
+    <li><b>Celda Peltier</b> — un "golpe térmico" por evento de juego (vida crítica), manejado por un relé.</li>
+  </ul>
+
+  <div class="note info"><span class="h">Contexto académico</span>
+  Proyecto Final de Temas Selectos de Mecatrónica (UNAM, 2026-2). El cerebro es un ESP32-WROOM-32 DevKit montado en
+  una PCB casera; el firmware es un único sketch multiarchivo de Arduino y el juego es un proyecto Unity (<code class="k">TSPProyect/</code>).</div>
+</div></section>
+
+<!-- ============ 2 ARQUITECTURA ============ -->
+<section id="arquitectura"><div class="wrap">
+  <p class="eyebrow">Sección 2</p>
+  <h3 class="sec">Arquitectura del sistema</h3>
+  <p>El ESP32 es un <b>Access Point WiFi</b>: la PC con Unity y los celulares se conectan a su red. La PC abre un socket
+  TCP y, a partir de ahí, fluyen dos corrientes de datos en sentidos opuestos.</p>
+
+  <div class="flow">
+    <div class="row">
+      <div class="node glove"><div class="t">Guante de control</div><div class="d">Joysticks · Flex · IMU BMI160 · Botones</div></div>
+      <div class="node glove"><div class="t">Guante háptico</div><div class="d">Solenoide (retroceso)</div></div>
+    </div>
+    <div class="arrowline">▼ &nbsp; entradas leídas cada loop &nbsp; ▼</div>
+    <div class="row">
+      <div class="node brain"><div class="t">ESP32-WROOM-32 · cerebro</div>
+        <div class="d">Lee entradas → arma CSV → envía a Unity a 50 Hz. Recibe comandos <code class="k">KEY=VAL;</code> → mueve actuadores. Además: AP WiFi, DNS captivo, mDNS y dashboard web.</div></div>
+    </div>
+    <div class="row">
+      <div class="node vest"><div class="t">Chaleco / salida</div><div class="d">4 motores PWM · NeoPixel vida · Peltier</div></div>
+      <div class="node pc"><div class="t">PC · Unity (cliente TCP)</div><div class="d">Juego FPS · traduce inputs y dispara eventos hápticos</div></div>
+    </div>
+  </div>
+
+  <h4>Las dos corrientes de datos</h4>
+  <table class="tbl">
+    <tr><th>Sentido</th><th>Formato</th><th>Frecuencia</th><th>Contenido</th></tr>
+    <tr><td><b>ESP → Unity</b></td><td class="mono">CSV terminado en \n</td><td class="mono">50 Hz</td>
+        <td>Estado del guante: <span class="mono">jump,shoot,weapon,vrx1,vry1,vrx2,vry2,flex,roll,pitch,btn2</span></td></tr>
+    <tr><td><b>Unity → ESP</b></td><td class="mono">KEY=VAL; ...</td><td>Por evento</td>
+        <td>Órdenes a actuadores: <span class="mono">M1..M4 SOL HP DMG HIT PELT</span></td></tr>
+  </table>
+
+  <p>La clave del diseño es que <b>el ESP es la fuente de verdad de las entradas</b> (incluso decide qué arma está
+  equipada, a partir del gesto de la IMU) y <b>Unity es la fuente de verdad de los eventos del juego</b> (cuánta vida
+  queda, de qué dirección vino el disparo). Cada lado calcula lo que mejor sabe y se lo manda al otro ya digerido.</p>
+</div></section>
+
+<!-- ============ 3 ELECTRONICA ============ -->
+<section id="electronica"><div class="wrap">
+  <p class="eyebrow">Sección 3</p>
+  <h3 class="sec">Electrónica y alimentación</h3>
+
+  <h4>Árbol de alimentación</h4>
+  <div class="flow">
+    <div class="row">
+      <div class="node"><div class="t">Baterías 2×3.7 V</div><div class="d">Litio en serie · ~7.4 V nominal (medido ~8 V con celdas a 4 V) · switch general</div></div>
+      <div class="node"><div class="t">Regulador → 5 V</div><div class="d">Alimenta la ESP32 y los relés de 5 V</div></div>
+      <div class="node"><div class="t">ESP32 → 3.3 V</div><div class="d">Joysticks, botones, flex e I2C de la IMU</div></div>
+    </div>
+  </div>
+  <p>La línea de <b>7.4 V cruda</b> alimenta los motores y el solenoide; la <b>de 5 V</b> alimenta la lógica y los relés;
+  la <b>de 3.3 V</b> (de la propia ESP) alimenta los sensores. Cada actuador de potencia se maneja con un transistor
+  <b>TIP120</b> (Darlington): el GPIO de 3.3 V satura la base y el TIP120 conmuta la carga a 7.4 V o el relé.</p>
+
+  <h5>Por qué TIP120 y no el GPIO directo</h5>
+  <p>Un GPIO del ESP32 entrega como mucho ~12 mA y 3.3 V — insuficiente para mover un motor vibrador, un solenoide o la
+  bobina de un relé. El TIP120 actúa de interruptor de potencia: corriente pequeña en la base (GPIO), corriente grande en
+  el colector (motor/relé). El diodo de protección del Darlington ayuda con los picos inductivos al apagar.</p>
+
+  <h5>Actuadores y cómo se controlan</h5>
+  <table class="tbl">
+    <tr><th>Actuador</th><th>Alimentación</th><th>Driver</th><th>Señal del firmware</th></tr>
+    <tr><td>4 motores vibradores (3 V)</td><td class="mono">7.4 V recortada</td><td>TIP120</td><td><span class="mono">analogWrite()</span> PWM recortado a 3 V eq.</td></tr>
+    <tr><td>Solenoide (retroceso)</td><td class="mono">7.4 V</td><td>TIP120</td><td>Pulso digital de 100 ms</td></tr>
+    <tr><td>Relé celda Peltier</td><td class="mono">5 V (bobina)</td><td>TIP120</td><td>Pulso digital de 4 s</td></tr>
+    <tr><td>Tira NeoPixel (8 LED)</td><td class="mono">5 V</td><td>Datos directos</td><td>Protocolo WS2812 (Adafruit_NeoPixel)</td></tr>
+  </table>
+
+  <div class="note warn"><span class="h">Realidad de banco · 2026-05-27</span>
+  Hardware observado fallando: el flex lee 0 (probable desconexión), joysticks descentrados, IMU lee 0.00 (posible I2C
+  muerto), y el TIP120 del pad <code class="k">MOT3 (GPIO25)</code> se quemó — por eso el motor M2 se recableó al pad libre
+  <code class="k">MOT7 (GPIO18)</code>. <b>No son bugs de firmware</b>, son temas de placa.</div>
+</div></section>
+
+<!-- ============ 4 PINOUT ============ -->
+<section id="pinout"><div class="wrap">
+  <p class="eyebrow">Sección 4</p>
+  <h3 class="sec">Pinout real de la PCB</h3>
+  <p>Estas asignaciones viven en <code class="k">HardwareConfig.h</code>. Los pines no son arbitrarios: el ESP32 tiene
+  reglas duras (entradas-solo, pines de arranque, pines de flash) que condicionaron cada decisión.</p>
+
+  <h4>Entradas — guante de control</h4>
+  <table class="tbl">
+    <tr><th>Función</th><th>GPIO</th><th>Tipo</th><th>Notas</th></tr>
+    <tr><td>Joystick 1 X (movimiento)</td><td class="pin">32</td><td><span class="badge in">ADC in</span></td><td>Eje X invertido por software</td></tr>
+    <tr><td>Joystick 1 Y (movimiento)</td><td class="pin">33</td><td><span class="badge in">ADC in</span></td><td>—</td></tr>
+    <tr><td>Joystick 2 X (cámara)</td><td class="pin">34</td><td><span class="badge in">ADC in</span></td><td>Solo entrada</td></tr>
+    <tr><td>Joystick 2 Y (cámara)</td><td class="pin">35</td><td><span class="badge in">ADC in</span></td><td>Solo entrada</td></tr>
+    <tr><td>Flex (gatillo)</td><td class="pin">36</td><td><span class="badge in">ADC in</span></td><td>Solo entrada · divisor en la PCB</td></tr>
+    <tr><td>PB1 — Saltar</td><td class="pin">13</td><td><span class="badge in">digital</span></td><td>Activo en alto, <span class="mono">INPUT_PULLDOWN</span></td></tr>
+    <tr><td>PB2 — Recarga manual</td><td class="pin">14</td><td><span class="badge in">digital</span></td><td>Se envía a Unity (campo <span class="mono">btn2</span>)</td></tr>
+    <tr><td>IMU BMI160 SDA / SCL</td><td class="pin">21 / 22</td><td><span class="badge in">I2C</span></td><td>Dirección <span class="mono">0x69</span></td></tr>
+  </table>
+
+  <h4>Salidas — actuadores</h4>
+  <table class="tbl">
+    <tr><th>Función</th><th>GPIO</th><th>Tipo</th><th>Notas</th></tr>
+    <tr><td>Motor M1 (frente-izq)</td><td class="pin">17</td><td><span class="badge out">PWM</span></td><td>pad MOT2</td></tr>
+    <tr><td>Motor M2 (frente-der)</td><td class="pin">18</td><td><span class="badge out">PWM</span></td><td>pad MOT7 — <b>reubicado</b> (TIP120 de MOT3 quemado)</td></tr>
+    <tr><td>Motor M3 (espalda-izq)</td><td class="pin">26</td><td><span class="badge out">PWM</span></td><td>pad MOT4</td></tr>
+    <tr><td>Motor M4 (espalda-der)</td><td class="pin">27</td><td><span class="badge out">PWM</span></td><td>pad MOT5</td></tr>
+    <tr><td>Solenoide</td><td class="pin">19</td><td><span class="badge out">digital</span></td><td>pad MOT8 — movido desde GPIO0 (problemas de boot)</td></tr>
+    <tr><td>Relé Peltier</td><td class="pin">4</td><td><span class="badge out">digital</span></td><td>pad REL2 · pulso de 4 s</td></tr>
+    <tr><td>NeoPixel vida</td><td class="pin">2</td><td><span class="badge out">datos</span></td><td>Pin de arranque; se usa con cuidado para no chocar con Serial</td></tr>
+  </table>
+
+  <div class="note"><span class="h">Reglas del ESP32 que mandan en el diseño</span>
+  <ul style="margin:6px 0 0">
+    <li><b>GPIO34/35/36/39 son solo-entrada</b> → joysticks 2 y flex caen ahí naturalmente; GPIO39 no puede manejar un TIP120.</li>
+    <li><b>GPIO0/2/12/15 son pines de arranque</b> → cargarlos puede impedir el boot. El solenoide se mudó de GPIO0 a GPIO19 por esto.</li>
+    <li><b>GPIO9/10 pertenecen a la flash</b> del WROOM → inutilizables (por eso no se montó el MP3).</li>
+    <li><b>GPIO1/3 son UART0 (Serial)</b> → se evitan mientras se depura por el monitor serial.</li>
+  </ul></div>
+</div></section>
+
+<!-- ============ 5 LOOP ============ -->
+<section id="fw-loop"><div class="wrap">
+  <p class="eyebrow">Sección 5 · Firmware</p>
+  <h3 class="sec">El loop principal</h3>
+  <p>El firmware es un sketch multiarchivo de Arduino. Todos los <code class="k">.ino</code> se concatenan en orden
+  alfabético al compilar, así que <b>no hay <span class="mono">#include</span> entre ellos</b>: el estado se comparte por
+  variables globales declaradas en <code class="k">GlobalState.h</code>. El corazón está en
+  <code class="k">ChalecoHaptico.ino</code> y tiene un <b>orden fijo cada iteración</b> que no es casual.</p>
+
+  <div class="code">
+    <div class="bar"><span class="file">ChalecoHaptico.ino <span class="ln">· líneas 55–87</span></span><span class="cp" data-cp>copiar</span></div>
+<pre><span class="kw">void</span> <span class="fn">loop</span>()
+{
+  dnsServer.<span class="fn">processNextRequest</span>();   <span class="cm">// 1. responde el DNS captivo</span>
+  <span class="fn">TryAcceptClient</span>();              <span class="cm">// 2. acepta Unity o redirige navegadores</span>
+
+  <span class="fn">ReadInputs</span>();                   <span class="cm">// 3. joysticks, botones, flex</span>
+  <span class="fn">ReadIMU</span>();                      <span class="cm">// 4. BMI160 + filtro + gesto de arma</span>
+  <span class="fn">ReceiveCommandsFromUnity</span>();     <span class="cm">// 5. parsea KEY=VAL; del juego</span>
+  <span class="fn">ReceiveCommandsFromSerial</span>();    <span class="cm">//    (mismo parser por el monitor serial)</span>
+
+  <span class="fn">UpdateVibrationMotors</span>();        <span class="cm">// 6. aplica PWM y patrones de daño</span>
+  <span class="fn">UpdateSolenoid</span>();              <span class="cm">//    pulsos no bloqueantes (millis)</span>
+  <span class="fn">UpdatePeltier</span>();
+  <span class="fn">UpdateHealthBar</span>();
+
+  <span class="kw">unsigned long</span> now = <span class="fn">millis</span>();
+  <span class="kw">if</span> (now - lastSendMs &gt;= SEND_PERIOD_MS)  <span class="cm">// 7. envía a Unity a 50 Hz (20 ms)</span>
+  {
+    lastSendMs = now;
+    <span class="fn">SendStateToUnity</span>();
+  }
+
+  <span class="cm">// El dashboard se actualiza DESPUES de mandar a Unity para no</span>
+  <span class="cm">// retrasar la trama del videojuego. Lee los mismos globales.</span>
+  <span class="fn">UpdateDashboard</span>();                <span class="cm">// 8. SSE a 25 Hz</span>
+
+  <span class="kw">if</span> (now - lastDebugMs &gt;= DEBUG_PERIOD_MS) <span class="cm">// 9. monitor serial a 5 Hz</span>
+  { lastDebugMs = now; <span class="fn">DebugPrintAll</span>(); }
+}</pre>
+  </div>
+
+  <p>Tres ideas de diseño importan aquí:</p>
+  <ul>
+    <li><b>Prioridad a Unity.</b> El envío de la trama del juego (paso 7) ocurre <i>antes</i> que el dashboard (paso 8).
+    El dashboard lee las mismas variables globales, así que actualizarlo después no cuesta muestreo extra y mantiene la
+    latencia hacia Unity al mínimo.</li>
+    <li><b>Nada bloquea.</b> Solenoide, Peltier y patrones de daño usan <code class="k">millis()</code>, nunca
+    <code class="k">delay()</code>. El loop debe correr libre a cientos de Hz para que el WiFi y el envío a 50 Hz no se atasquen.</li>
+    <li><b>Cadencias escalonadas.</b> Unity a 50 Hz, dashboard a 25 Hz (la mitad), debug a 5 Hz. Cada cosa corre tan rápido
+    como necesita y no más, repartiendo el CPU.</li>
+  </ul>
+
+  <h5>setup() — orden de arranque</h5>
+  <p>En <code class="k">ChalecoHaptico.ino:38–53</code> se inicializan primero los pines y actuadores (todos a un estado
+  seguro/apagado), luego el bus I2C y la IMU, y al final el WiFi y el dashboard. Poner los actuadores en LOW antes que
+  nada evita que el chaleco "patalee" al energizar.</p>
+</div></section>
+
+<!-- ============ 6 INPUTS ============ -->
+<section id="fw-inputs"><div class="wrap">
+  <p class="eyebrow">Sección 6 · Firmware</p>
+  <h3 class="sec">Entradas: joysticks y gatillo de flexión</h3>
+
+  <h4>Joysticks: normalización con zona muerta</h4>
+  <p>Cada eje analógico (0–4095 del ADC de 12 bits) se mapea al rango <code class="k">[-1, 1]</code> que Unity espera.
+  Fíjate en el detalle del signo:</p>
+
+  <div class="code">
+    <div class="bar"><span class="file">Inputs.ino <span class="ln">· líneas 12–28</span></span><span class="cp" data-cp>copiar</span></div>
+<pre>  <span class="cm">// Eje X invertido en ambos joysticks: el hardware quedo cableado</span>
+  <span class="cm">// al reves y movia izquierda/derecha en sentido contrario.</span>
+  vrx1 = -<span class="fn">NormalizeJoystick</span>(<span class="fn">analogRead</span>(JOY1_X_PIN));
+  vry1 =  <span class="fn">NormalizeJoystick</span>(<span class="fn">analogRead</span>(JOY1_Y_PIN));
+  vrx2 = -<span class="fn">NormalizeJoystick</span>(<span class="fn">analogRead</span>(JOY2_X_PIN));
+  vry2 =  <span class="fn">NormalizeJoystick</span>(<span class="fn">analogRead</span>(JOY2_Y_PIN));
+
+  <span class="fn">ApplyDeadzone</span>();
+...
+<span class="kw">float</span> <span class="fn">NormalizeJoystick</span>(<span class="kw">int</span> raw)
+{
+  <span class="kw">return</span> <span class="fn">mapFloat</span>((<span class="kw">float</span>)raw, 0.0f, 4095.0f, 1.0f, -1.0f);
+}</pre>
+  </div>
+
+  <p>La inversión de signo en <code class="k">vrx1/vrx2</code> es la corrección de un cableado físico al revés — se
+  arregla en software en vez de resoldar. La <b>zona muerta</b> (<code class="k">ApplyDeadzone</code>, umbral
+  <code class="k">JOY_DEADZONE = 0.20</code>) fuerza a cero los valores pequeños, para que un joystick descentrado o con
+  ruido no haga "caminar" al personaje solo.</p>
+
+  <h4>El gatillo es un sensor de flexión, no un botón</h4>
+  <p>Decisión de diseño: <b>el disparo se calcula doblando el dedo</b>. Esto se hace con histéresis para que no
+  "tartamudee" justo en el umbral.</p>
+
+  <div class="code">
+    <div class="bar"><span class="file">Inputs.ino · UpdateShootFromFlex() <span class="ln">· líneas 38–59</span></span><span class="cp" data-cp>copiar</span></div>
+<pre>  <span class="cm">// (rama FLEX_TRIGGER_WHEN_BELOW = 0: el ADC SUBE al doblar)</span>
+  <span class="kw">if</span> (!shoot &amp;&amp; flexValue &gt;= flexTriggerThreshold)
+  {
+    shoot = <span class="kw">true</span>;                                  <span class="cm">// cruzó hacia arriba → dispara</span>
+  }
+  <span class="kw">else if</span> (shoot &amp;&amp; flexValue &lt;= flexTriggerThreshold - FLEX_TRIGGER_HYSTERESIS)
+  {
+    shoot = <span class="kw">false</span>;                                 <span class="cm">// soltó bien por debajo → deja de disparar</span>
+  }</pre>
+  </div>
+
+  <p>El umbral es <b>fijo</b> (<code class="k">FLEX_TRIGGER_THRESHOLD = 1500</code> en <code class="k">GlobalState.h:49</code>),
+  no se calibra al arranque — una decisión deliberada para tener comportamiento repetible. La <b>histéresis de 150</b> crea
+  una banda: para encender hay que pasar 1500, pero para apagar hay que bajar a 1350. Sin ella, una lectura oscilando
+  alrededor de 1500 dispararía decenas de veces por segundo.</p>
+
+  <div class="note info"><span class="h">Por qué dos ramas (#if)</span>
+  La macro <code class="k">FLEX_TRIGGER_WHEN_BELOW</code> permite invertir la lógica si se cambia el divisor del flex por
+  uno que lea al revés (resistencia que sube en vez de bajar al doblar), sin reescribir la condición. Es robustez ante un
+  cambio de hardware probable.</div>
+</div></section>
+
+<!-- ============ 7 IMU ============ -->
+<section id="fw-imu"><div class="wrap">
+  <p class="eyebrow">Sección 7 · Firmware</p>
+  <h3 class="sec">IMU: ángulos y cambio de arma por gesto</h3>
+  <p>La IMU es un <b>BMI160</b> (acelerómetro + giroscopio) en I2C, dirección <code class="k">0x69</code>. El firmware la
+  configura a mano escribiendo registros (no usa librería) y fusiona ambos sensores con un <b>filtro complementario</b>.</p>
+
+  <h4>El filtro complementario, intuitivamente</h4>
+  <p>El acelerómetro mide el ángulo absoluto pero es ruidoso y se altera con cualquier sacudida. El giroscopio mide la
+  velocidad de giro: integrado da un ángulo muy suave pero que "deriva" con el tiempo. El filtro combina lo mejor de los dos:</p>
+
+  <div class="code">
+    <div class="bar"><span class="file">IMU.ino · ReadIMU() <span class="ln">· líneas 63–66</span></span><span class="cp" data-cp>copiar</span></div>
+<pre>  <span class="cm">// Formula correcta: ang = beta*(ang + gyro*dt) + (1-beta)*accAng</span>
+  rollAngle  = BETA_COMP * (rollAngle  - gyrX * dt) + (1.0f - BETA_COMP) * accAngleXFil;
+  pitchAngle = BETA_COMP * (pitchAngle + gyrY * dt) + (1.0f - BETA_COMP) * accAngleYFil;</pre>
+  </div>
+
+  <p>Con <code class="k">BETA_COMP = 0.8</code>: el 80 % del nuevo ángulo viene de integrar el giroscopio (suave,
+  responde rápido) y el 20 % corrige hacia el ángulo del acelerómetro (ancla absoluta, mata la deriva). El
+  <code class="k">dt</code> real se mide con <code class="k">micros()</code> cada ciclo, así la integración es correcta aunque
+  el loop varíe de velocidad.</p>
+
+  <div class="note ok"><span class="h">Bug corregido del sketch histórico</span>
+  El comentario en <code class="k">IMU.ino:9–10</code> documenta que el sketch viejo de <code class="k">Arduino IDE/IMU/</code>
+  <b>multiplicaba donde debía sumar</b> en esta fórmula. Aquí está corregido — un buen ejemplo de por qué los sketches
+  históricos son referencia pero no se reutilizan tal cual.</div>
+
+  <h4>Cambiar de arma girando la muñeca</h4>
+  <p>No hay botón de cambio de arma: se usa el <b>pitch</b> de la IMU con un patrón "inclinar y volver al centro". El ESP
+  mantiene <code class="k">weaponIndex</code> como índice absoluto y se lo manda a Unity; Unity solo obedece.</p>
+
+  <div class="code">
+    <div class="bar"><span class="file">IMU.ino · UpdateWeaponFromPitch() <span class="ln">· líneas 86–102</span></span><span class="cp" data-cp>copiar</span></div>
+<pre>  <span class="kw">if</span> (weaponGestureArmed)
+  {
+    <span class="kw">if</span> (pitchAngle &gt;= WEAPON_PITCH_THRESHOLD)        <span class="cm">// pasó +45° → avanza/retrocede 1 arma</span>
+    {
+      weaponIndex = (weaponIndex + dir + WEAPON_COUNT) % WEAPON_COUNT;
+      weaponGestureArmed = <span class="kw">false</span>;                  <span class="cm">// desarma: no cuenta de nuevo aún</span>
+    }
+    <span class="kw">else if</span> (pitchAngle &lt;= -WEAPON_PITCH_THRESHOLD)
+    {
+      weaponIndex = (weaponIndex - dir + WEAPON_COUNT) % WEAPON_COUNT;
+      weaponGestureArmed = <span class="kw">false</span>;
+    }
+  }
+  <span class="kw">else if</span> (<span class="fn">fabsf</span>(pitchAngle) &lt; WEAPON_PITCH_REARM)     <span class="cm">// volvió a la banda central (±20°)</span>
+  {
+    weaponGestureArmed = <span class="kw">true</span>;                       <span class="cm">// rearma: listo para el siguiente giro</span>
+  }
+}</pre>
+  </div>
+
+  <p>La <b>máquina de estados de un solo bit</b> (<code class="k">weaponGestureArmed</code>) es lo elegante: al cruzar
+  ±45° cuenta <i>un</i> cambio y se desarma; solo vuelve a contar cuando el pitch regresa a ±20°. Así, mantener el control
+  girado no cicla las armas sin control — exige el gesto completo de ida y vuelta. El <code class="k">% WEAPON_COUNT</code>
+  hace que el índice dé la vuelta (de la última arma a la primera). La dirección del giro se invierte con
+  <code class="k">WEAPON_PITCH_INVERT</code> en <code class="k">HardwareConfig.h</code>.</p>
+</div></section>
+
+<!-- ============ 8 ACTUADORES ============ -->
+<section id="fw-actuadores"><div class="wrap">
+  <p class="eyebrow">Sección 8 · Firmware</p>
+  <h3 class="sec">Actuadores: el patrón "no bloqueante"</h3>
+  <p>Todos los actuadores con tiempo (solenoide, Peltier, patrones de daño, parpadeo de la barra) siguen el mismo molde:
+  guardan un <b>instante de fin</b> y comparan contra <code class="k">millis()</code> cada loop. Nunca esperan. Despliega
+  cada módulo:</p>
+
+  <details class="mod"><summary><span class="fn">Solenoid.ino</span><span class="desc">pulso de retroceso de 100 ms con cooldown</span><span class="arrow">▶</span></summary>
+    <div class="body">
+      <p>Unity manda <code class="k">SOL=1</code> en cada disparo. El firmware enciende el solenoide y agenda su apagado;
+      ignora nuevos disparos hasta pasar el cooldown.</p>
+      <div class="code"><div class="bar"><span class="file">Solenoid.ino <span class="ln">· 5–6, 19–32</span></span></div>
+<pre><span class="kw">const unsigned long</span> SOLENOID_PULSE_MS = 100;     <span class="cm">// dura el "golpe"</span>
+<span class="kw">const unsigned long</span> SOLENOID_COOLDOWN_MS = 160;  <span class="cm">// descanso antes del próximo</span>
+...
+<span class="kw">if</span> (solenoidTrigger &amp;&amp; !solenoidActive &amp;&amp; (<span class="kw">long</span>)(now - solenoidReadyMs) &gt;= 0)
+{
+  solenoidActive = <span class="kw">true</span>;
+  solenoidEndMs = now + SOLENOID_PULSE_MS;          <span class="cm">// agenda el apagado, no espera</span>
+  <span class="fn">digitalWrite</span>(SOLENOID_PIN, HIGH);
+}
+solenoidTrigger = <span class="kw">false</span>;
+<span class="kw">if</span> (solenoidActive &amp;&amp; (<span class="kw">long</span>)(now - solenoidEndMs) &gt;= 0)
+{
+  <span class="fn">digitalWrite</span>(SOLENOID_PIN, LOW);
+  solenoidActive = <span class="kw">false</span>;
+  solenoidReadyMs = now + SOLENOID_COOLDOWN_MS;     <span class="cm">// arranca el cooldown</span>
+}</pre></div>
+      <p>El truco del cast <code class="k">(long)(now - endMs) &gt;= 0</code> hace la comparación robusta ante el desbordamiento
+      de <code class="k">millis()</code> (cada ~49 días): la resta en aritmética con signo siempre da el delta correcto.</p>
+    </div>
+  </details>
+
+  <details class="mod"><summary><span class="fn">VibrationMotors.ino</span><span class="desc">PWM continuo + patrón de daño de 3 toques</span><span class="arrow">▶</span></summary>
+    <div class="body">
+      <p>Cada zona tiene dos modos. En reposo escribe el PWM continuo que pide Unity (<code class="k">motorTarget[i]</code>).
+      Cuando llega un golpe (<code class="k">DMG</code>/<code class="k">HIT</code>) ejecuta un patrón de 3 pulsos cortos sin
+      bloquear, usando una pequeña estructura de estado por motor:</p>
+      <div class="code"><div class="bar"><span class="file">VibrationMotors.ino · UpdateVibrationMotors() <span class="ln">· 72–117</span></span></div>
+<pre><span class="kw">if</span> (damageZoneMask != 0)                 <span class="cm">// HIT puede traer varias zonas a la vez</span>
+{
+  <span class="kw">for</span> (<span class="kw">int</span> z = 1; z &lt;= 4; z++)
+    <span class="kw">if</span> (damageZoneMask &amp; (1 &lt;&lt; (z - 1))) <span class="fn">StartDamageTap</span>(z);
+  damageZoneMask = 0;
+}
+...
+<span class="kw">else</span>                                     <span class="cm">// sin patrón activo: PWM continuo de los sliders</span>
+{
+  <span class="fn">WriteMotor</span>(i, motorTarget[i]);
+}</pre></div>
+      <p>El bitmask permite que <code class="k">HIT=3</code> dispare M1 y M2 simultáneamente (golpe frontal). El patrón de
+      daño escribe siempre a intensidad máxima, pero pasa por <code class="k">WriteMotor()</code> que lo recorta a 3 V
+      (ver Sección 9).</p>
+    </div>
+  </details>
+
+  <details class="mod"><summary><span class="fn">Peltier.ino</span><span class="desc">golpe térmico de 4 s + pulsos automáticos por vida baja</span><span class="arrow">▶</span></summary>
+    <div class="body">
+      <p>La celda Peltier reusa el relé que antes manejaba electrodos. Un pulso corto no se nota térmicamente, así que dura
+      <code class="k">PELTIER_PULSE_MS = 4000</code>. Lo más astuto: <b>pulsa sola cuando la vida está crítica</b>, sin que
+      Unity mande nada extra — solo a partir del <code class="k">HP=</code> que ya recibe.</p>
+      <div class="code"><div class="bar"><span class="file">Peltier.ino · UpdatePeltier() <span class="ln">· 26–50</span></span></div>
+<pre><span class="cm">// Pulsos automáticos por vida baja: con 0 &lt; HP &lt; 30% pulsa sola</span>
+<span class="kw">if</span> (healthPercent &gt; 0 &amp;&amp; healthPercent &lt; PELTIER_LOW_HP_THRESHOLD &amp;&amp;
+    !peltierActive &amp;&amp; (<span class="kw">long</span>)(<span class="fn">millis</span>() - peltierLowHpNextMs) &gt;= 0)
+{
+  peltierTrigger = <span class="kw">true</span>;
+}
+<span class="kw">if</span> (peltierTrigger &amp;&amp; !peltierActive)
+{
+#<span class="pp">if</span> ENABLE_PELTIER                       <span class="cm">// bandera de seguridad: 0 = nunca cierra el relé</span>
+  peltierActive = <span class="kw">true</span>;
+  peltierEndMs = <span class="fn">millis</span>() + PELTIER_PULSE_MS;
+  <span class="fn">digitalWrite</span>(PELTIER_RELAY_PIN, HIGH);
+#<span class="pp">endif</span>
+}</pre></div>
+      <p>El <code class="k">#if ENABLE_PELTIER</code> es una <b>bandera de seguridad</b>: en 0, el firmware reconoce el comando
+      pero nunca cierra el relé físicamente — útil para probar la lógica sin energizar la celda. Tras cada pulso, los pulsos
+      automáticos esperan <code class="k">PELTIER_LOW_HP_COOLDOWN_MS</code> (6 s) para dejar enfriar.</p>
+    </div>
+  </details>
+
+  <details class="mod"><summary><span class="fn">HealthBar.ino</span><span class="desc">8 NeoPixel · color por HP · flash rojo de daño</span><span class="arrow">▶</span></summary>
+    <div class="body">
+      <p>Cada LED vale 12.5 %. El color cambia por umbral (verde &gt;60 %, amarillo 25–60 %, rojo &lt;25 %) y la tira se llena
+      <b>desde el último LED</b> porque quedó montada al revés en el chaleco:</p>
+      <div class="code"><div class="bar"><span class="file">HealthBar.ino · DrawHealthBar() <span class="ln">· 52–63</span></span></div>
+<pre><span class="kw">int</span> litLeds = (hp * NEOPIXEL_COUNT + 99) / 100;   <span class="cm">// redondeo al alza: &gt;0% enciende ≥1 LED</span>
+<span class="kw">for</span> (<span class="kw">int</span> i = 0; i &lt; NEOPIXEL_COUNT; i++)
+{
+  strip.<span class="fn">setPixelColor</span>(i, i &gt;= (NEOPIXEL_COUNT - litLeds) ? color : 0);
+}</pre></div>
+      <p>El flash de daño es no bloqueante: <code class="k">UpdateHealthBar</code> pinta toda la tira de rojo por
+      <code class="k">FLASH_TOTAL_MS = 250</code> y luego fuerza un redibujo. También refresca cada 100 ms aunque el HP no
+      cambie, para corregir LEDs corrompidos por ruido eléctrico en cables largos.</p>
+    </div>
+  </details>
+</div></section>
+
+<!-- ============ 9 VOLTAJE ============ -->
+<section id="fw-voltaje"><div class="wrap">
+  <p class="eyebrow">Sección 9 · Firmware</p>
+  <h3 class="sec">Límite de voltaje de los motores</h3>
+  <p>Este es uno de los puntos más finos del proyecto. Los motores son de <b>3 V</b> pero cuelgan de la línea de batería de
+  <b>~7.4–8 V</b>. Aplicar PWM al 100 % los quemaría. La solución: el firmware <b>recorta el duty</b> para que el voltaje
+  promedio entregado nunca pase de 3 V, mientras el usuario sigue viendo un rango cómodo de 0–255.</p>
+
+  <h5>El cálculo del techo seguro</h5>
+  <div class="code"><div class="bar"><span class="file">VibrationMotors.ino · ComputeMotorMaxDuty() <span class="ln">· 35–46</span></span><span class="cp" data-cp>copiar</span></div>
+<pre><span class="kw">void</span> <span class="fn">ComputeMotorMaxDuty</span>()
+{
+  <span class="kw">if</span> (BATTERY_PACK_VOLTAGE &lt;= MOTOR_RATED_VOLTAGE) { motorMaxDuty = PWM_MAX_DUTY; <span class="kw">return</span>; }
+  <span class="kw">int</span> d = (<span class="kw">int</span>)<span class="fn">lroundf</span>((<span class="kw">float</span>)PWM_MAX_DUTY * MOTOR_RATED_VOLTAGE / BATTERY_PACK_VOLTAGE);
+  <span class="cm">// Con pack 8 V y motor 3 V → 255 * 3 / 8 ≈ 96</span>
+  motorMaxDuty = d;
+}</pre></div>
+
+  <h5>El escalado en cada escritura</h5>
+  <div class="code"><div class="bar"><span class="file">VibrationMotors.ino · WriteMotor() <span class="ln">· 119–133</span></span><span class="cp" data-cp>copiar</span></div>
+<pre><span class="kw">void</span> <span class="fn">WriteMotor</span>(<span class="kw">int</span> index, <span class="kw">int</span> duty)
+{
+  ...
+  motorLevel[index] = duty;                       <span class="cm">// guarda 0..255 "pedido" para el dashboard</span>
+  <span class="cm">// Recorta el promedio a 3 V: 0..255 pedido → 0..motorMaxDuty físico</span>
+  <span class="kw">int</span> scaled = (<span class="kw">int</span>)((<span class="kw">long</span>)duty * motorMaxDuty / PWM_MAX_DUTY);
+  <span class="fn">analogWrite</span>(motorPins[index], scaled);
+}</pre></div>
+
+  <p>Así, un <code class="k">M1=255</code> de Unity (100 % de intensidad) se traduce físicamente a un duty de ~96/255,
+  que sobre 8 V promedia 3 V. El recorte cubre <b>también los toques de daño</b>, que llaman a <code class="k">WriteMotor</code>
+  con el máximo. Para reajustar tras medir la batería real, <b>basta cambiar <code class="k">BATTERY_CELL_VOLTAGE</code></b>
+  en <code class="k">HardwareConfig.h</code> — el techo se recalcula solo.</p>
+
+  <div class="play">
+    <h5>▸ Simulador del recorte de voltaje</h5>
+    <p class="muted" style="font-size:13.5px;margin-top:0">Mueve la intensidad que pide Unity y mira el duty real y el voltaje sobre el motor.</p>
+    <div class="simrow">
+      <span class="pill">Pack: <b id="packV">8.0 V</b></span>
+      <span class="pill">Tope duty: <b id="maxDuty">96</b>/255</span>
+    </div>
+    <label>Intensidad pedida (M1 = 0..255)</label>
+    <div class="simrow">
+      <input type="range" id="dutyReq" min="0" max="255" value="180">
+      <span class="pill">M&nbsp;=&nbsp;<b id="dutyReqV">180</b></span>
+    </div>
+    <div class="simrow">
+      <span class="pill">Duty real: <b id="dutyReal">67</b>/255</span>
+      <span class="pill">V motor ≈ <b id="vMotor">2.1 V</b></span>
+      <span class="pill" id="safe">✓ seguro</span>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ 10 PROTOCOLO ============ -->
+<section id="proto"><div class="wrap">
+  <p class="eyebrow">Sección 10 · Comunicación</p>
+  <h3 class="sec">El protocolo, en vivo</h3>
+  <p>Dos formatos de texto plano, deliberadamente simples para que ambos lados los parseen sin librerías.</p>
+
+  <h4>ESP → Unity · trama CSV de estado (50 Hz)</h4>
+  <p>Once campos separados por coma, terminados en <code class="k">\n</code>. Pega o edita una trama y mira qué significa cada campo:</p>
+
+  <div class="play">
+    <h5>▸ Decodificador de tramas CSV</h5>
+    <label>Trama (ESP → Unity)</label>
+    <input type="text" id="csvIn" value="1,1,2,0.500,-0.250,0.000,0.800,2100,12.40,-47.10,0">
+    <div class="btnrow">
+      <button data-csv="0,0,0,0.000,0.000,0.000,0.000,0,0.00,0.00,0">reposo</button>
+      <button data-csv="1,1,2,0.500,-0.250,0.000,0.800,2100,12.40,-47.10,0">disparando + saltando</button>
+      <button data-csv="0,0,3,0.000,0.000,0.000,0.000,300,5.00,48.30,1">cambió arma + recarga</button>
+    </div>
+    <div class="out"><div class="csvgrid" id="csvOut"></div></div>
+  </div>
+
+  <p>Generado por <code class="k">ProtocolSend.ino:18–26</code> con un solo <code class="k">snprintf</code>. El orden es
+  contractual: Unity parsea <b>por posición</b> en <code class="k">WIFIConnectionScript.cs</code>. Por eso
+  <code class="k">btn2</code> se añadió <b>al final</b> — un firmware viejo sin ese campo sigue siendo compatible porque no
+  corre los índices 0..9.</p>
+
+  <table class="tbl">
+    <tr><th>#</th><th>Campo</th><th>Tipo</th><th>Origen / significado</th></tr>
+    <tr><td>0</td><td class="mono">jump</td><td>0/1</td><td>Botón PB1</td></tr>
+    <tr><td>1</td><td class="mono">shoot</td><td>0/1</td><td>Calculado del flex (no es botón)</td></tr>
+    <tr><td>2</td><td class="mono">weapon</td><td>0..3</td><td>Índice de arma — gesto de pitch de la IMU</td></tr>
+    <tr><td>3–6</td><td class="mono">vrx1,vry1,vrx2,vry2</td><td>float [-1,1]</td><td>Joysticks movimiento y cámara (con zona muerta)</td></tr>
+    <tr><td>7</td><td class="mono">flex</td><td>0..4095</td><td>Lectura cruda del flex (para depurar)</td></tr>
+    <tr><td>8–9</td><td class="mono">roll,pitch</td><td>float (grados)</td><td>Ángulos del filtro complementario</td></tr>
+    <tr><td>10</td><td class="mono">btn2</td><td>0/1</td><td>Botón PB2 — recarga manual en Unity</td></tr>
+  </table>
+
+  <h4>Unity → ESP · comandos KEY=VAL;</h4>
+  <p>Pares clave=valor separados por <code class="k">;</code>. Todas las claves son opcionales; se pueden combinar varias en
+  una línea. Construye un comando y mira cómo lo interpreta el firmware:</p>
+
+  <div class="play">
+    <h5>▸ Consola de comandos (simulada)</h5>
+    <div class="btnrow">
+      <button data-cmd="M1=180;M2=0;M3=0;M4=0">vibrar M1</button>
+      <button data-cmd="SOL=1">disparar solenoide</button>
+      <button data-cmd="HIT=3;HP=70">golpe frontal</button>
+      <button data-cmd="HP=10">vida crítica</button>
+      <button data-cmd="PELT=1">golpe térmico</button>
+      <button data-cmd="DMG=2">daño zona 2</button>
+    </div>
+    <label>Comando (Unity → ESP)</label>
+    <input type="text" id="cmdIn" value="HIT=3;HP=70">
+    <div class="out"><div class="cmdlog" id="cmdOut"></div></div>
+  </div>
+
+  <p>Parseado por <code class="k">ProtocolReceive.ino · ApplyToken()</code> (líneas 104–142). El <b>mismo parser</b> sirve a
+  Unity, al monitor serial y al dashboard web — un solo punto de verdad.</p>
+
+  <table class="tbl">
+    <tr><th>Clave</th><th>Valor</th><th>Efecto</th><th>Quién la manda</th></tr>
+    <tr><td class="mono">M1..M4</td><td>0..255</td><td>PWM continuo de cada zona (recortado a 3 V)</td><td>Sliders / lógica de Unity</td></tr>
+    <tr><td class="mono">SOL</td><td>0/1</td><td>Pulso de solenoide (retroceso)</td><td><span class="mono">WeaponScript.Shoot()</span> en cada disparo</td></tr>
+    <tr><td class="mono">HP</td><td>0..100</td><td>Barra NeoPixel + dispara pulsos Peltier si &lt;30%</td><td><span class="mono">PlayersHealthScript</span></td></tr>
+    <tr><td class="mono">HIT</td><td>1..15</td><td>Daño direccional (bitmask de zonas) + flash rojo</td><td><span class="mono">PlayersHealthScript.ComputeHitMask</span></td></tr>
+    <tr><td class="mono">DMG</td><td>1..4</td><td>Daño en una zona (legado)</td><td>—</td></tr>
+    <tr><td class="mono">PELT</td><td>0/1</td><td>Golpe térmico de la Peltier (alias <span class="mono">ELEC</span>/<span class="mono">REL</span>)</td><td>Evento de juego</td></tr>
+  </table>
+
+  <div class="note"><span class="h">El bitmask de HIT, visualmente</span>
+  <table class="tbl" style="margin:8px 0 0">
+    <tr><th>bit</th><th>valor</th><th>zona</th><th>posición en el torso</th></tr>
+    <tr><td>0</td><td class="mono">1</td><td>M1</td><td>frente-izquierda</td></tr>
+    <tr><td>1</td><td class="mono">2</td><td>M2</td><td>frente-derecha</td></tr>
+    <tr><td>2</td><td class="mono">4</td><td>M3</td><td>espalda-izquierda</td></tr>
+    <tr><td>3</td><td class="mono">8</td><td>M4</td><td>espalda-derecha</td></tr>
+  </table>
+  <span class="muted" style="font-size:13px">Frente = 1|2 = 3 · Derecha = 2|8 = 10 · Izquierda = 1|4 = 5 · Espalda = 4|8 = 12 · Sin dirección = 15.</span></div>
+</div></section>
+
+<!-- ============ 11 WIFI ============ -->
+<section id="wifi"><div class="wrap">
+  <p class="eyebrow">Sección 11 · Comunicación</p>
+  <h3 class="sec">WiFi: un puerto, dos protocolos</h3>
+  <p>El ESP32 levanta un Access Point (<code class="k">ESP32_Chaleco</code> / <code class="k">192.175.5.1</code>). El puerto
+  80 atiende <b>tanto a Unity como a navegadores</b>, distinguiéndolos por una heurística simple: husmea los primeros bytes.</p>
+
+  <div class="code"><div class="bar"><span class="file">WiFiAP.ino · LooksLikeHttp() <span class="ln">· 119–127</span></span><span class="cp" data-cp>copiar</span></div>
+<pre><span class="cm">// Unity siempre lleva '=' temprano ("M1=128"); HTTP lleva un espacio</span>
+<span class="cm">// temprano ("GET / HTTP..."). El primero que aparezca decide.</span>
+<span class="kw">for</span> (<span class="kw">int</span> i = 0; i &lt; n; i++)
+{
+  <span class="kw">if</span> (sniff[i] == <span class="st">'='</span>) <span class="kw">return false</span>;   <span class="cm">// → es Unity</span>
+  <span class="kw">if</span> (sniff[i] == <span class="st">' '</span>) <span class="kw">return true</span>;    <span class="cm">// → es un navegador</span>
+}</pre></div>
+
+  <p>Si es un navegador, recibe un <code class="k">302 → http://chaleco:81/</code> y se va al dashboard. Si es Unity, los
+  bytes ya leídos se <b>reinyectan</b> al parser con <code class="k">FeedSniffedByteToUnity</code> para no perder el primer
+  comando. Detalles importantes:</p>
+  <ul>
+    <li><b>El puerto 80 se atiende siempre</b>, incluso con Unity ya conectado, para poder redirigir un navegador al
+    dashboard con el juego corriendo. Solo se ignora un <i>segundo</i> socket de Unity.</li>
+    <li><b>DNS captivo en :53</b> resuelve cualquier nombre a la IP del AP, así tipear "chaleco" en el celular funciona
+    aunque no soporte mDNS (y dispara el aviso de captive portal del sistema operativo).</li>
+    <li><b>mDNS</b> publica <code class="k">chaleco.local</code>.</li>
+  </ul>
+
+  <div class="note warn"><span class="h">No romper la heurística</span>
+  Al cambiar el protocolo de Unity, los comandos <b>no deben empezar con espacio</b> ni retrasar el primer
+  <code class="k">=</code>, o serían confundidos con HTTP. Es una restricción de diseño documentada.</div>
+</div></section>
+
+<!-- ============ 12 DASHBOARD ============ -->
+<section id="dashboard"><div class="wrap">
+  <p class="eyebrow">Sección 12 · Comunicación</p>
+  <h3 class="sec">Dashboard web embebido</h3>
+  <p>Un servidor HTTP independiente en el <b>puerto 81</b> sirve una página de telemetría y control, todo a mano sobre
+  <code class="k">WiFiServer</code> (sin librerías, porque el AP no tiene internet). La página es una "consola táctica"
+  (ámbar sobre charcoal) donde cada zona de motor es <b>control y feedback a la vez</b>.</p>
+
+  <div class="twocol">
+    <div>
+      <h5>Telemetría: Server-Sent Events</h5>
+      <p>El navegador abre <code class="k">EventSource('/stream')</code> y el ESP empuja un JSON con todo el estado a 25 Hz
+      (<code class="k">SendDashboardFrame</code>). Lee las mismas variables globales que Unity, así que no duplica muestreo.</p>
+    </div>
+    <div>
+      <h5>Comandos: GET /cmd?c=…</h5>
+      <p>Los comandos del dashboard reusan <code class="k">ProcessRxLine</code> — el mismo parser de Unity. Arrastrar un
+      slider de motor manda <code class="k">M#=valor</code> en tiempo real.</p>
+    </div>
+  </div>
+
+  <h5>Las dos lecciones de robustez de sockets</h5>
+  <p>Este módulo encierra dos bugs difíciles ya resueltos, que el código defiende explícitamente:</p>
+  <ol>
+    <li><b>Keep-alive obligatorio.</b> Las peticiones cortas van por slots con conexión persistente. Abrir una conexión TCP
+    por comando agotaba los PCB de lwIP al arrastrar un slider (quedaban en <code class="k">TIME_WAIT</code>) y lwIP terminaba
+    matando el stream SSE o el socket de Unity. El JS además serializa los comandos (un <code class="k">fetch</code> en vuelo,
+    cola con coalescencia por clave).</li>
+    <li><b>Sondeo con <code class="k">select()</code> antes de escribir.</b> A un cliente zombi (un celular que recargó la
+    página) un <code class="k">write()</code> lo reintentaría ~1 s y congelaría el loop entero (síntoma: uptime detenido,
+    0 Hz, Unity sin tramas). Por eso cada socket SSE se sondea con timeout cero y se desaloja tras 25 tramas sin drenar.</li>
+  </ol>
+
+  <div class="code"><div class="bar"><span class="file">Dashboard.ino · SendDashboardFrame() <span class="ln">· 398–417</span></span></div>
+<pre><span class="kw">int</span> sockfd = dashboardClients[i].<span class="fn">fd</span>();
+fd_set wset; <span class="fn">FD_ZERO</span>(&amp;wset); <span class="fn">FD_SET</span>(sockfd, &amp;wset);
+<span class="kw">struct</span> timeval tv = {0, 0};                  <span class="cm">// timeout cero: no bloquea nunca</span>
+writable = (<span class="fn">select</span>(sockfd + 1, NULL, &amp;wset, NULL, &amp;tv) &gt; 0) &amp;&amp; <span class="fn">FD_ISSET</span>(sockfd, &amp;wset);
+<span class="kw">if</span> (writable) { dashboardClients[i].<span class="fn">write</span>((<span class="kw">const uint8_t</span>*)buf, n); dashboardStreamStrikes[i] = 0; }
+<span class="kw">else if</span> (++dashboardStreamStrikes[i] &gt;= DASHBOARD_STREAM_MAX_STRIKES) <span class="fn">/* desaloja */</span>;</pre></div>
+
+  <p>Funciona con <b>varios dispositivos a la vez</b> (cada <code class="k">/stream</code> toma un slot en
+  <code class="k">dashboardClients[]</code>) y <b>al mismo tiempo que el juego</b>. El frame SSE incluye también el voltaje
+  equivalente de los motores (campos <code class="k">vm</code>/<code class="k">vb</code>) para verificar el recorte de la Sección 9.</p>
+</div></section>
+
+<!-- ============ 13 UNITY CONN ============ -->
+<section id="unity-conn"><div class="wrap">
+  <p class="eyebrow">Sección 13 · Unity</p>
+  <h3 class="sec">El cliente TCP de Unity</h3>
+  <p><code class="k">WIFIConnectionScript.cs</code> es el puente del lado del juego. Se conecta al ESP y deja los inputs en
+  <b>campos estáticos</b> (<code class="k">J1X</code>, <code class="k">Shoot</code>, <code class="k">Weapon</code>…) que
+  cualquier otro script lee sin referencias cruzadas.</p>
+
+  <div class="code"><div class="bar"><span class="file">WIFIConnectionScript.cs · SetupSocket() <span class="ln">· 65–80</span></span><span class="cp" data-cp>copiar</span></div>
+<pre>tcpClient = <span class="kw">new</span> <span class="fn">TcpClient</span>(host, port);
+tcpClient.NoDelay = <span class="kw">true</span>;   <span class="cm">// desactiva Nagle: cada comando sale YA</span>
+networkStream = tcpClient.<span class="fn">GetStream</span>();
+streamWriter = <span class="kw">new</span> <span class="fn">StreamWriter</span>(networkStream);
+streamReader = <span class="kw">new</span> <span class="fn">StreamReader</span>(networkStream);
+secondaryThread = <span class="kw">new</span> <span class="fn">Thread</span>(RecieveData);
+secondaryThread.IsBackground = <span class="kw">true</span>;   <span class="cm">// no impide cerrar la app</span>
+secondaryThread.<span class="fn">Start</span>();</pre></div>
+
+  <p>Dos decisiones críticas, ambas comentadas en el código como "no tocar":</p>
+
+  <h5>1. NoDelay = true (sin Nagle)</h5>
+  <p>El algoritmo de Nagle agruparía varios comandos pequeños antes de enviarlos, metiendo decenas de ms de latencia.
+  Con <code class="k">NoDelay</code>, un <code class="k">SOL=1</code> de disparo sale al instante — esencial para que el
+  retroceso se sienta sincronizado con el clic.</p>
+
+  <h5>2. Recepción con ReadLine() bloqueante puro</h5>
+  <div class="code"><div class="bar"><span class="file">WIFIConnectionScript.cs · RecieveData() <span class="ln">· 111–124</span></span></div>
+<pre><span class="kw">while</span> (!abort)
+{
+  <span class="kw">string</span> line = streamReader.<span class="fn">ReadLine</span>();   <span class="cm">// despierta apenas llega una línea</span>
+  <span class="kw">if</span> (line == <span class="kw">null</span>) { <span class="kw">break</span>; }              <span class="cm">// la ESP cerró la conexión</span>
+  recievedData = line;
+  <span class="kw">string</span>[] datos = line.<span class="fn">Split</span>(<span class="st">','</span>);     <span class="cm">// parsea el CSV por posición</span>
+  ...
+}</pre></div>
+  <div class="note warn"><span class="h">No reintroducir el patrón viejo</span>
+  El código documenta por qué <b>no</b> usar <code class="k">DataAvailable</code> + <code class="k">Thread.Sleep</code> +
+  <code class="k">mainThread.Send</code>: ese patrón acumulaba ~500 ms de tramas viejas en el buffer del
+  <code class="k">StreamReader</code>, ataba la recepción a los FPS y producía inputs con retraso y estancados. El
+  <code class="k">ReadLine()</code> bloqueante en un hilo de fondo entrega cada trama apenas llega.</div>
+
+  <p>El parseo usa <code class="k">CultureInfo.InvariantCulture</code> para que el punto decimal del CSV se interprete bien
+  sin importar la configuración regional de Windows. El reparto al hilo principal usa <code class="k">mainThread.Post</code>
+  (no bloqueante) para no atar la recepción al render.</p>
+</div></section>
+
+<!-- ============ 14 UNITY GAME ============ -->
+<section id="unity-game"><div class="wrap">
+  <p class="eyebrow">Sección 14 · Unity</p>
+  <h3 class="sec">Lógica de juego que dispara el hardware</h3>
+  <p>Cada script de juego consume los inputs estáticos y, cuando ocurre algo, manda el comando háptico correspondiente.</p>
+
+  <details class="mod" open><summary><span class="fn">FSPControllerScript</span><span class="desc">movimiento y salto desde el joystick 1</span><span class="arrow">▶</span></summary>
+    <div class="body">
+      <p>Lee <code class="k">J1X/J1Y</code> para el desplazamiento y <code class="k">Jump</code> para saltar
+      (<code class="k">FSPControllerScript.cs:47–50</code>). El movimiento se aplica en <code class="k">FixedUpdate</code> con
+      <code class="k">CharacterController.Move</code>, combinando vector horizontal y gravedad.</p>
+    </div>
+  </details>
+
+  <details class="mod"><summary><span class="fn">WeaponScript</span><span class="desc">disparo → raycast + solenoide</span><span class="arrow">▶</span></summary>
+    <div class="body">
+      <p>El disparo se activa con <code class="k">WIFIConnectionScript.Shoot</code> (el flex) o <code class="k">Fire1</code>
+      para pruebas con teclado. En cada disparo manda el retroceso y hace el raycast al enemigo:</p>
+      <div class="code"><div class="bar"><span class="file">WeaponScript.cs · Shoot() <span class="ln">· 105, 112–116</span></span></div>
+<pre>WIFIConnectionScript.<span class="fn">SendData</span>(<span class="st">"SOL=1"</span>);   <span class="cm">// retroceso háptico por disparo</span>
+...
+<span class="kw">if</span> (Physics.<span class="fn">Raycast</span>(origin, direction, <span class="kw">out</span> raycastHit, 100f, LayerMask.<span class="fn">GetMask</span>(<span class="st">"Enemy"</span>)))
+{
+  EnemyHealthScript enemyHealth = raycastHit.collider.<span class="fn">GetComponent</span>&lt;EnemyHealthScript&gt;();
+  <span class="kw">if</span> (enemyHealth != <span class="kw">null</span>) enemyHealth.<span class="fn">DamageEnemy</span>(damageToEnemy);
+}</pre></div>
+      <p>Cada referencia opcional (animator, audio, fogonazo) se usa solo si está asignada — así una falta en el inspector
+      <b>degrada el efecto</b> en vez de lanzar una excepción que pausaría el juego con "Error Pause".</p>
+    </div>
+  </details>
+
+  <details class="mod"><summary><span class="fn">PlayersHealthScript</span><span class="desc">daño → bitmask direccional + vida</span><span class="arrow">▶</span></summary>
+    <div class="body">
+      <p>Convierte la posición del atacante en la máscara de zonas del comando <code class="k">HIT</code>, en sectores de 90°:</p>
+      <div class="code"><div class="bar"><span class="file">PlayersHealthScript.cs · ComputeHitMask() <span class="ln">· 38–47</span></span></div>
+<pre>Vector3 local = transform.<span class="fn">InverseTransformPoint</span>(attackerWorldPosition);
+<span class="kw">float</span> angle = Mathf.<span class="fn">Atan2</span>(local.x, local.z) * Mathf.Rad2Deg;  <span class="cm">// 0 = frente, +90 = derecha</span>
+
+<span class="kw">if</span> (angle &gt; -45f &amp;&amp; angle &lt;= 45f)  <span class="kw">return</span> 1 | 2;   <span class="cm">// frente: M1+M2</span>
+<span class="kw">if</span> (angle &gt; 45f  &amp;&amp; angle &lt;= 135f) <span class="kw">return</span> 2 | 8;   <span class="cm">// derecha: M2+M4</span>
+<span class="kw">if</span> (angle &gt; -135f &amp;&amp; angle &lt;= -45f) <span class="kw">return</span> 1 | 4;  <span class="cm">// izquierda: M1+M3</span>
+<span class="kw">return</span> 4 | 8;                                <span class="cm">// espalda: M3+M4</span></pre></div>
+      <p>Y manda golpe + vida en <b>un solo paquete</b>: <code class="k">"HIT="+mask+";HP="+health</code>. Con NoDelay sale
+      inmediato, y el firmware usa ese mismo <code class="k">HP</code> para los pulsos de Peltier por vida baja.</p>
+    </div>
+  </details>
+
+  <details class="mod"><summary><span class="fn">SelectWeaponScript</span><span class="desc">obedece el índice de arma de la IMU</span><span class="arrow">▶</span></summary>
+    <div class="body">
+      <p>Cuando <code class="k">WIFIConnectionScript.Weapon</code> (que calculó el ESP) difiere del arma actual, cambia de
+      arma reusando el HUD y la animación existentes, y muestra la rueda un instante como feedback
+      (<code class="k">SelectWeaponScript.cs:79–104</code>). El ESP es la fuente de verdad; Unity solo sincroniza.</p>
+    </div>
+  </details>
+
+  <details class="mod"><summary><span class="fn">ReloadScript</span><span class="desc">PB2 → recarga táctica con cooldown</span><span class="arrow">▶</span></summary>
+    <div class="body">
+      <p>Detecta el flanco de subida de <code class="k">Button2</code> (PB2) y recarga munición con un cooldown, para que no
+      sea munición infinita. Confirma con un pulso de solenoide. El juego usa un pool único de munición 0..100, sin cargador.</p>
+    </div>
+  </details>
+</div></section>
+
+<!-- ============ 15 PROBAR ============ -->
+<section id="probar"><div class="wrap">
+  <p class="eyebrow">Sección 15 · Operación</p>
+  <h3 class="sec">Cómo compilar y probar</h3>
+
+  <h5>Firmware (arduino-cli, placa en COM4 a 115200, FQBN esp32:esp32:esp32)</h5>
+  <div class="code"><div class="bar"><span class="file">PowerShell</span><span class="cp" data-cp>copiar</span></div>
+<pre><span class="nm">$acli</span> = <span class="st">"C:\Program Files\Arduino CLI\arduino-cli.exe"</span>
+<span class="nm">$sk</span>   = <span class="st">"E:\Documents\ChalecoHáptico\Proyecto Final\ChalecoHaptico"</span>
+
+<span class="cm"># Compilar</span>
+&amp; <span class="nm">$acli</span> compile --fqbn esp32:esp32:esp32 --warnings none <span class="nm">$sk</span>
+
+<span class="cm"># Cargar (este DevKit exige botón BOOT manual)</span>
+&amp; <span class="nm">$acli</span> upload -p COM4 --fqbn esp32:esp32:esp32 <span class="nm">$sk</span></pre></div>
+  <div class="note warn"><span class="h">No usar arduino-cli monitor</span>
+  Bloquea el COM4 indefinidamente. Tampoco abrir el Serial Monitor del IDE a la vez (Access denied). Para leer serial,
+  abrir el puerto brevemente desde un script de PowerShell.</div>
+
+  <h5>Verificar compilación C# de Unity (sin abrir el editor)</h5>
+  <div class="code"><div class="bar"><span class="file">PowerShell</span><span class="cp" data-cp>copiar</span></div>
+<pre>powershell -ExecutionPolicy Bypass -File scripts\unity-compile.ps1</pre></div>
+  <p>Abre el proyecto en <code class="k">-batchmode</code>, recompila y reporta errores/warnings. Exit 0 = OK. El editor de
+  Unity <b>no</b> puede estar abierto sobre <code class="k">TSPProyect</code> durante el batch mode.</p>
+
+  <h5>Probar actuadores sin Unity</h5>
+  <p>Conectar la PC al WiFi <code class="k">ESP32_Chaleco</code> (pass <code class="k">123456789</code>), abrir un socket TCP a
+  <code class="k">192.175.5.1:80</code> y enviar comandos, o usar el dashboard en <code class="k">http://192.175.5.1:81/</code>:</p>
+  <div class="code"><div class="bar"><span class="file">comandos de prueba</span></div>
+<pre>HP=75;
+M1=180;M2=0;M3=0;M4=0;
+SOL=1;
+HIT=3;HP=70;
+PELT=1;</pre></div>
+</div></section>
+
+<!-- ============ 16 MAPA ============ -->
+<section id="mapa"><div class="wrap">
+  <p class="eyebrow">Sección 16 · Referencia</p>
+  <h3 class="sec">Mapa de archivos</h3>
+  <table class="tbl">
+    <tr><th>Archivo</th><th>Responsabilidad</th></tr>
+    <tr><td class="mono">ChalecoHaptico.ino</td><td><span class="mono">setup()</span> y <span class="mono">loop()</span> — orquesta todo</td></tr>
+    <tr><td class="mono">HardwareConfig.h</td><td>Pinout físico y banderas de seguridad/voltaje</td></tr>
+    <tr><td class="mono">GlobalState.h</td><td>Estado compartido, objetos WiFi, constantes de gesto/umbral</td></tr>
+    <tr><td class="mono">Pinout.ino</td><td><span class="mono">pinMode()</span> e inicialización de buses</td></tr>
+    <tr><td class="mono">Inputs.ino</td><td>Joysticks, botones y gatillo de flexión</td></tr>
+    <tr><td class="mono">IMU.ino</td><td>BMI160, filtro complementario y cambio de arma</td></tr>
+    <tr><td class="mono">VibrationMotors.ino</td><td>PWM, patrones de daño y recorte de voltaje</td></tr>
+    <tr><td class="mono">Solenoid.ino / Peltier.ino</td><td>Pulsos no bloqueantes de los actuadores temporizados</td></tr>
+    <tr><td class="mono">HealthBar.ino</td><td>Barra NeoPixel y flash de daño</td></tr>
+    <tr><td class="mono">WiFiAP.ino</td><td>Access Point, TCP dual-protocolo, DNS captivo, mDNS</td></tr>
+    <tr><td class="mono">ProtocolSend.ino / ProtocolReceive.ino</td><td>CSV de salida y parser <span class="mono">KEY=VAL;</span></td></tr>
+    <tr><td class="mono">Dashboard.ino / DashboardPage.h</td><td>Servidor HTTP :81 + SSE; HTML/CSS/JS en PROGMEM</td></tr>
+    <tr><td class="mono">Debug.ino</td><td>Monitor serial legible a 5 Hz</td></tr>
+    <tr><td class="mono">TSPProyect/…/WIFIConnectionScript.cs</td><td>Cliente TCP de Unity (inputs estáticos)</td></tr>
+    <tr><td class="mono">…/WeaponScript · PlayersHealthScript · SelectWeaponScript · ReloadScript</td><td>Lógica de juego que dispara los hápticos</td></tr>
+  </table>
+
+  <div class="footer">
+    <b>Chaleco Háptico</b> — Documento generado a partir del código fuente del repositorio. Las citas de línea
+    corresponden al estado del firmware y los scripts de Unity en la rama actual. Documentos vivos relacionados:
+    <code class="k">IDEAS.md</code> (pinout, protocolo, plan) y <code class="k">CLAUDE.md</code> (arquitectura y convenciones).
+  </div>
+</div></section>
+
+</main>
+</div>
+
+<button class="topbtn" id="topbtn">▲ inicio</button>
+
+<script>
+// ---------- copiar bloques de código ----------
+document.querySelectorAll('[data-cp]').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var pre=btn.closest('.code').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var t=btn.textContent;btn.textContent='✓ copiado';
+      setTimeout(function(){btn.textContent=t;},1200);
+    });
+  });
+});
+
+// ---------- scrollspy ----------
+var links=Array.prototype.slice.call(document.querySelectorAll('nav.side a'));
+var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+function spy(){
+  var y=window.scrollY+120,idx=0;
+  for(var i=0;i<secs.length;i++){if(secs[i]&&secs[i].offsetTop<=y)idx=i;}
+  links.forEach(function(a){a.classList.remove('active');});
+  if(links[idx])links[idx].classList.add('active');
+  document.getElementById('topbtn').classList.toggle('show',window.scrollY>600);
+}
+window.addEventListener('scroll',spy);window.addEventListener('load',spy);
+document.getElementById('topbtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// ---------- simulador de recorte de voltaje ----------
+(function(){
+  var PACK=8.0, RATED=3.0, MAXD=Math.round(255*RATED/PACK);
+  document.getElementById('packV').textContent=PACK.toFixed(1)+' V';
+  document.getElementById('maxDuty').textContent=MAXD;
+  var req=document.getElementById('dutyReq');
+  function upd(){
+    var d=+req.value;
+    var real=Math.round(d*MAXD/255);
+    var v=(real/255*PACK);
+    document.getElementById('dutyReqV').textContent=d;
+    document.getElementById('dutyReal').textContent=real;
+    document.getElementById('vMotor').textContent=v.toFixed(1)+' V';
+    var safe=document.getElementById('safe');
+    if(v<=RATED+0.01){safe.textContent='✓ seguro';safe.style.color='var(--green)';}
+    else{safe.textContent='✗ sobre 3 V';safe.style.color='var(--red)';}
+  }
+  req.addEventListener('input',upd);upd();
+})();
+
+// ---------- decodificador CSV ----------
+(function(){
+  var fields=[
+    {k:'jump',m:'salto (PB1)'},{k:'shoot',m:'gatillo (flex)'},{k:'weapon',m:'arma 0..3 (IMU)'},
+    {k:'vrx1',m:'mov. X'},{k:'vry1',m:'mov. Y'},{k:'vrx2',m:'cám. X'},{k:'vry2',m:'cám. Y'},
+    {k:'flex',m:'flex crudo'},{k:'roll',m:'roll (°)'},{k:'pitch',m:'pitch (°)'},{k:'btn2',m:'PB2 recarga'}
+  ];
+  var inp=document.getElementById('csvIn'),out=document.getElementById('csvOut');
+  function render(){
+    var parts=inp.value.split(',');out.innerHTML='';
+    fields.forEach(function(f,i){
+      var v=(i<parts.length)?parts[i].trim():'—';
+      var err=(i<parts.length)?'':' err';
+      var d=document.createElement('div');d.className='csvcell'+err;
+      d.innerHTML='<div class="field">'+i+' · '+f.k+'</div><div class="val">'+(v===''?'∅':v)+'</div><div class="mean">'+f.m+'</div>';
+      out.appendChild(d);
+    });
+    if(parts.length<11){
+      var w=document.createElement('div');w.className='csvcell err';
+      w.innerHTML='<div class="field">aviso</div><div class="val" style="font-size:12px">faltan campos</div><div class="mean">firmware viejo sin btn2 sigue siendo compatible</div>';
+      out.appendChild(w);
+    }
+  }
+  inp.addEventListener('input',render);
+  document.querySelectorAll('[data-csv]').forEach(function(b){b.addEventListener('click',function(){inp.value=b.getAttribute('data-csv');render();});});
+  render();
+})();
+
+// ---------- consola de comandos simulada ----------
+(function(){
+  var inp=document.getElementById('cmdIn'),out=document.getElementById('cmdOut');
+  var zone=['M1 frente-izq','M2 frente-der','M3 espalda-izq','M4 espalda-der'];
+  function explainHit(mask){
+    var z=[];for(var b=0;b<4;b++){if(mask&(1<<b))z.push(zone[b]);}return z.join(' + ');
+  }
+  function render(){
+    var line=inp.value.trim();var toks=line.split(';');var msgs=[];
+    toks.forEach(function(t){
+      t=t.trim();if(!t)return;
+      var eq=t.indexOf('=');if(eq<=0){msgs.push('<span class="bad">✗ token inválido: '+t+'</span>');return;}
+      var k=t.substring(0,eq).toUpperCase(),v=parseInt(t.substring(eq+1),10);
+      if(k==='M1'||k==='M2'||k==='M3'||k==='M4'){
+        var idx=+k[1]-1;var real=Math.round(Math.min(255,Math.max(0,v||0))*96/255);
+        msgs.push('<span class="esp">'+k+'</span> → vibra '+zone[idx]+' a intensidad '+(v||0)+'/255 (duty real ~'+real+', ≤3 V)');
+      } else if(k==='SOL'){msgs.push('<span class="esp">SOL</span> → '+(v?'pulso de solenoide (100 ms + cooldown)':'sin efecto'));}
+      else if(k==='HP'){var h=Math.min(100,Math.max(0,v||0));var extra=(h>0&&h<30)?'  ⚠ &lt;30%: Peltier pulsa sola':'';msgs.push('<span class="esp">HP</span> → barra NeoPixel a '+h+'%'+extra);}
+      else if(k==='HIT'){if(v>=1&&v<=15)msgs.push('<span class="esp">HIT='+v+'</span> → golpe en '+explainHit(v)+' + flash rojo');else msgs.push('<span class="bad">HIT fuera de rango (1..15)</span>');}
+      else if(k==='DMG'){if(v>=1&&v<=4)msgs.push('<span class="esp">DMG='+v+'</span> → toque en '+zone[v-1]+' (legado)');else msgs.push('<span class="bad">DMG fuera de rango (1..4)</span>');}
+      else if(k==='PELT'||k==='ELEC'||k==='REL'){msgs.push('<span class="esp">'+k+'</span> → '+(v?'golpe térmico Peltier (4 s, si ENABLE_PELTIER=1)':'sin efecto'));}
+      else{msgs.push('<span class="bad">✗ clave desconocida: '+k+'</span>');}
+    });
+    out.innerHTML=msgs.length?msgs.join('\n'):'(comando vacío)';
+  }
+  inp.addEventListener('input',render);
+  document.querySelectorAll('[data-cmd]').forEach(function(b){b.addEventListener('click',function(){inp.value=b.getAttribute('data-cmd');render();});});
+  render();
+})();
+</script>
+</body>
+</html>
