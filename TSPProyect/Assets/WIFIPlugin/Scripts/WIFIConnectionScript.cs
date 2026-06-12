@@ -165,8 +165,18 @@ using System.Net.Sockets;
 				return;
 			}
 
-			streamWriter.Write(infoToSend + '\n'); //Env�a la informaci�n usando el stream
-			streamWriter.Flush(); //Limpia el stream
+			// Nunca dejar que un fallo de red suba al caller: SendData se llama en
+			// medio de la logica del juego (Shoot, recarga) y una excepcion aqui
+			// abortaria esa logica (p.ej. el disparo sin descontar municion).
+			try
+			{
+				streamWriter.Write(infoToSend + '\n'); //Env�a la informaci�n usando el stream
+				streamWriter.Flush(); //Limpia el stream
+			}
+			catch (Exception)
+			{
+				socketReady = false; //Conexion caida: los siguientes envios se omiten
+			}
 		}
 
 		public void CloseSocket() //Cierra el socket

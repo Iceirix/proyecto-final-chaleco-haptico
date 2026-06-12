@@ -17,6 +17,7 @@ public class AMMOScript : MonoBehaviour
         
     {
         ammoAmount -= ammoToUse;
+        ammoAmount = Mathf.Clamp(ammoAmount, 0, 100);
         UpdateAmmoBar();
     }
 public void RechargeAmmo(int ammoToRecharge) 

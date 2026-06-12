@@ -98,16 +98,18 @@ public class WeaponScript : MonoBehaviour
         // Cada referencia opcional se usa solo si esta asignada: asi una falta en
         // el inspector degrada el efecto (sin animacion/sonido/fogonazo) en vez
         // de lanzar una excepcion que pausaria el juego.
-        // Retroceso haptico: un pulso de solenoide por cada disparo. Con el
-        // gatillo mantenido, Update() vuelve a llamar Shoot() cada
-        // timeToRecharge, asi que el solenoide golpea al ritmo de la cadencia
-        // del arma (el firmware ademas impone su propio pulso + cooldown).
-        WIFIConnectionScript.SendData("SOL=1");
-
         if (animator != null) { animator.SetTrigger("Shoot"); }
         if (audioSource != null && shootingClip != null) { audioSource.PlayOneShot(shootingClip); }
         if (muzzleFlareParticles != null) { muzzleFlareParticles.Play(); }
         if (ammoScript != null) { ammoScript.UseAMMO(ammoRequired); }
+
+        // Retroceso haptico: un pulso de solenoide por cada disparo. Con el
+        // gatillo mantenido, Update() vuelve a llamar Shoot() cada
+        // timeToRecharge, asi que el solenoide golpea al ritmo de la cadencia
+        // del arma (el firmware ademas impone su propio pulso + cooldown).
+        // Va DESPUES de actualizar el estado del juego: el envio de red nunca
+        // debe poder interrumpir el descuento de municion/animacion/sonido.
+        WIFIConnectionScript.SendData("SOL=1");
 
         if (Physics.Raycast(origin, direction, out raycastHit, 100f, LayerMask.GetMask("Enemy")))
         {

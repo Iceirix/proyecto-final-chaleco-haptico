@@ -61562,6 +61562,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8209512827188551770}
+    - targetCorrespondingSourceObject: {fileID: 2715629396990140602, guid: c5c36c46b67af5e4b9f2ede2a9b42b75,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8209512827188551771}
   m_SourcePrefab: {fileID: 100100000, guid: c5c36c46b67af5e4b9f2ede2a9b42b75, type: 3}
 --- !u!1 &8209512827188551767 stripped
 GameObject:
@@ -61610,6 +61614,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ammoAmount: 100
   ammoBarImage: {fileID: 8209512827188551769}
+--- !u!114 &8209512827188551771
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209512827188551767}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6001fe3141a48dab054372f7826310d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReloadScript
+  ammoToRecover: 30
+  cooldownSeconds: 3
+  maxAmmo: 100
+  reloadClip: {fileID: 0}
+  sendHapticPulse: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
