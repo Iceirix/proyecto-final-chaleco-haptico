@@ -41,31 +41,34 @@ float vrx1 = 0.0f, vry1 = 0.0f;
 float vrx2 = 0.0f, vry2 = 0.0f;
 int flexValue = 0;
 int flexRestValue = 0;
-int flexTriggerThreshold = 0;
+// Umbral de disparo FIJO del sensor de flexion (sin calibracion al arranque).
+// Con el divisor de la PCB (flex a 3.3V, 1k a GND) el ADC lee ~0 en reposo y
+// sube al doblar (~3000); sobre este umbral se considera disparo. Para
+// invertir la direccion del gatillo ver FLEX_TRIGGER_WHEN_BELOW en
+// HardwareConfig.h.
+const int FLEX_TRIGGER_THRESHOLD = 1500;
+int flexTriggerThreshold = FLEX_TRIGGER_THRESHOLD;
 
 const float JOY_DEADZONE = 0.20f;
-// Divisor en PCB: 3.3V - flex - GPIO36 - 1k - GND. Medido: reposo ~0, al
-// doblar sube a ~3000. Umbral = reposo + DELTA (calibrado al boot; ver
-// FLEX_TRIGGER_WHEN_BELOW en HardwareConfig.h si el sensor lee al reves).
-const int FLEX_TRIGGER_DELTA = 2000;
-const int FLEX_TRIGGER_MIN_THRESHOLD = 300;  // piso usado solo en modo "dispara bajo umbral"
 const int FLEX_TRIGGER_HYSTERESIS = 150;
 
 // IMU.
 float rollAngle = 0.0f;
 float pitchAngle = 0.0f;
 
-// Cambio de arma por giro del brazo (roll de la IMU). Gesto "inclinar y volver
-// al centro": al superar +UMBRAL avanza un arma, al pasar -UMBRAL retrocede, y
-// el gesto se rearma solo cuando el roll regresa a la banda central. Asi cada
-// giro cuenta como un solo cambio. weaponIndex es la fuente de verdad y se
-// envia a Unity como indice absoluto 0..WEAPON_COUNT-1 (ver ProtocolSend.ino).
-// La direccion del giro se invierte con WEAPON_ROLL_INVERT en HardwareConfig.h.
+// Cambio de arma por giro del control (pitch de la IMU). Girar a la izquierda
+// marca pitch positivo y girar a la derecha pitch negativo. Gesto "inclinar y
+// volver al centro": al superar +UMBRAL avanza un arma, al pasar -UMBRAL
+// retrocede, y el gesto se rearma solo cuando el pitch regresa a la banda
+// central. Asi cada giro cuenta como un solo cambio. weaponIndex es la fuente
+// de verdad y se envia a Unity como indice absoluto 0..WEAPON_COUNT-1 (ver
+// ProtocolSend.ino). La direccion se invierte con WEAPON_PITCH_INVERT en
+// HardwareConfig.h.
 int weaponIndex = 0;
 bool weaponGestureArmed = true;
 const int   WEAPON_COUNT = 4;                 // armas en la rueda de Unity
-const float WEAPON_ROLL_THRESHOLD = 45.0f;    // grados de roll para contar un cambio
-const float WEAPON_ROLL_REARM = 20.0f;        // banda central (grados) para rearmar el gesto
+const float WEAPON_PITCH_THRESHOLD = 45.0f;   // grados de pitch para contar un cambio
+const float WEAPON_PITCH_REARM = 20.0f;       // banda central (grados) para rearmar el gesto
 
 int16_t axRaw = 0, ayRaw = 0, azRaw = 0;
 int16_t gxRaw = 0, gyRaw = 0, gzRaw = 0;
@@ -82,7 +85,7 @@ int activeDamageZone = 0;            // zona 1..4 con un toque de dano en curso 
 int healthPercent = 100;
 bool solenoidTrigger = false;
 bool peltierTrigger = false;
-int damageZoneTrigger = 0;
+int damageZoneMask = 0;              // bitmask de zonas con toque de dano pendiente (bit0=M1..bit3=M4)
 bool damageFlashTrigger = false;
 
 // Estado de actuadores usado tambien por Debug.ino.
@@ -92,5 +95,6 @@ unsigned long solenoidReadyMs = 0;
 
 bool peltierActive = false;
 unsigned long peltierEndMs = 0;
+unsigned long peltierLowHpNextMs = 0; // proximo pulso automatico permitido por vida baja
 
 #endif

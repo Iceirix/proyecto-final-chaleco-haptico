@@ -107,7 +107,9 @@ public class IdleRunAndShootScript : MonoBehaviour
 
         if (Physics.Raycast(origin, direction, out raycastHit, 100f, LayerMask.GetMask("Player"))) 
         {
-            raycastHit.collider.GetComponent<PlayersHealthScript>().DamagePlayer(damageToPlayer);
+            // Se pasa el origen del disparo para que el chaleco vibre solo del
+            // lado por el que llego el balazo.
+            raycastHit.collider.GetComponent<PlayersHealthScript>().DamagePlayer(damageToPlayer, origin);
         }
     }
 }

@@ -13,7 +13,9 @@ public class HitPlayerScript : MonoBehaviour
 
     private void OnTriggerEnter(Collider other) {
         if (other.CompareTag("Player")) {
-            other.gameObject.GetComponent<PlayersHealthScript>().DamagePlayer(damageToPlayer);
+            // Se pasa la posicion del enemigo para que el chaleco vibre solo
+            // del lado por el que llego el golpe.
+            other.gameObject.GetComponent<PlayersHealthScript>().DamagePlayer(damageToPlayer, transform.position);
         }
 
     }

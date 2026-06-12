@@ -6,7 +6,7 @@
 //
 //  shoot ya viene calculado a partir del sensor de flexion.
 //  weapon es el indice de arma 0..3, fuente de verdad en la ESP, calculado a
-//  partir del gesto de roll de la IMU (ver IMU.ino::UpdateWeaponFromRoll).
+//  partir del gesto de pitch de la IMU (ver IMU.ino::UpdateWeaponFromPitch).
 //  Unity cambia de arma cuando este indice difiere del suyo.
 // ============================================================================
 

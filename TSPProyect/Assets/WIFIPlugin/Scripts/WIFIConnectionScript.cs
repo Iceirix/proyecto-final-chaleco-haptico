@@ -66,6 +66,7 @@ using System.Net.Sockets;
 			try
 			{
 				tcpClient = new TcpClient(host, port); //Se conecta al Arduino en el puerto indicado
+				tcpClient.NoDelay = true; //Desactiva Nagle: cada comando sale de inmediato (latencia minima)
 				networkStream = tcpClient.GetStream(); //crea un stream para enviar y recibir informaci�n
 				streamWriter = new StreamWriter(networkStream); //crea stream de escritura
 				streamReader = new StreamReader(networkStream); //crea stream de lectura
@@ -130,15 +131,8 @@ using System.Net.Sockets;
                     float.TryParse(datos[5], NumberStyles.Float, CultureInfo.InvariantCulture, out J2X);
                     float.TryParse(datos[6], NumberStyles.Float, CultureInfo.InvariantCulture, out J2Y);
                 }
-                Debug.Log(
- "Jump=" + Jump +
- " Shoot=" + Shoot +
- " Weapon=" + Weapon +
- " J1X=" + J1X +
- " J1Y=" + J1Y +
- " J2X=" + J2X +
- " J2Y=" + J2Y
-);
+                // Sin Debug.Log aqui: a 50 Hz el log satura la consola y roba
+                // tiempo del hilo de recepcion (anade latencia a los inputs).
 
                 mainThread.Send((object state) =>
 					{

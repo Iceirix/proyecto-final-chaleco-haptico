@@ -24,7 +24,9 @@
 #define IMU_SDA_PIN 21
 #define IMU_SCL_PIN 22
 
-// 4 zonas del chaleco. Firmware M1..M4 -> pads de la PCB.
+// 4 zonas del chaleco. Posicion fisica en el torso (para el dano direccional
+// HIT=): M1 = frente-izquierda, M2 = frente-derecha, M3 = espalda-izquierda,
+// M4 = espalda-derecha. Firmware M1..M4 -> pads de la PCB.
 //   M1 = MOT2 (GPIO17)
 //   M2 = MOT7 (GPIO18)  <- reubicado: el TIP120 del pad MOT3 (GPIO25) se quemo,
 //                          asi que M2 se cablea al pad libre MOT7. Si reparas el
@@ -71,6 +73,13 @@
 #define ENABLE_PELTIER 1
 #define PELTIER_PULSE_MS 4000
 
+// Pulsos automaticos de calor por vida baja: mientras 0 < HP < umbral, la
+// Peltier pulsa sola (PELTIER_PULSE_MS encendida, luego espera el cooldown).
+// Lo decide el firmware a partir del HP= que Unity ya manda, sin trafico extra.
+// A HP=0 (muerto) o al recuperarse por encima del umbral, los pulsos paran.
+#define PELTIER_LOW_HP_THRESHOLD 30     // % de vida bajo el cual pulsa
+#define PELTIER_LOW_HP_COOLDOWN_MS 6000 // pausa entre pulsos (deja enfriar la celda)
+
 // Barra de vida.
 #define NEOPIXEL_PIN 2
 #define NEOPIXEL_COUNT 8
@@ -82,11 +91,11 @@
 // umbral; pon esto en 1 si se cambia el sensor por uno que lea al reves.
 #define FLEX_TRIGGER_WHEN_BELOW 0
 
-// Cambio de arma por giro del brazo: roll positivo avanza un arma y roll
-// negativo retrocede. Pon esto en 1 si en el guante el gesto queda invertido
-// (girar a la derecha deberia avanzar pero retrocede). Umbral y banda de
-// rearmado se ajustan en GlobalState.h tras pruebas.
-#define WEAPON_ROLL_INVERT 0
+// Cambio de arma por giro del control: pitch positivo (girar a la izquierda)
+// avanza un arma y pitch negativo (girar a la derecha) retrocede. Pon esto en
+// 1 si en el control el gesto queda invertido. Umbral y banda de rearmado se
+// ajustan en GlobalState.h tras pruebas.
+#define WEAPON_PITCH_INVERT 0
 
 // Dashboard web embebido. Usa un puerto distinto al TCP de Unity para no
 // interferir con la comunicacion del videojuego.

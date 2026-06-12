@@ -8,9 +8,13 @@
 //  para probar actuadores sin interrumpir la comunicacion normal por WiFi.
 //
 //  M1..M4: PWM continuo de las 4 zonas del chaleco.
-//  SOL: pulso de solenoide para retroceso.
-//  HP: vida 0..100 para NeoPixel.
-//  DMG: golpe haptico en zona 1..4 + flash rojo.
+//  SOL: pulso de solenoide para retroceso (Unity manda SOL=1 por cada disparo).
+//  HP: vida 0..100 para NeoPixel. Tambien dispara los pulsos automaticos de la
+//      Peltier cuando baja de PELTIER_LOW_HP_THRESHOLD (ver Peltier.ino).
+//  DMG: golpe haptico en una sola zona 1..4 + flash rojo (legado).
+//  HIT: golpe haptico direccional, bitmask 1..15 de zonas simultaneas
+//       (bit0=M1 frente-izq, bit1=M2 frente-der, bit2=M3 espalda-izq,
+//        bit3=M4 espalda-der) + flash rojo. Ej: HIT=3 = golpe de frente.
 //  PELT: golpe termico de la celda Peltier (pulso largo). Solo actua si
 //        ENABLE_PELTIER=1. ELEC y REL son alias de PELT por compatibilidad.
 // ============================================================================
@@ -123,7 +127,15 @@ void ApplyToken(const String& token)
   {
     if (v >= 1 && v <= 4)
     {
-      damageZoneTrigger = v;
+      damageZoneMask |= (1 << (v - 1));
+      damageFlashTrigger = true;
+    }
+  }
+  else if (key == "HIT")
+  {
+    if (v >= 1 && v <= 15)
+    {
+      damageZoneMask |= v;
       damageFlashTrigger = true;
     }
   }

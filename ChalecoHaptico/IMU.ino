@@ -65,18 +65,19 @@ void ReadIMU()
   rollAngle  = BETA_COMP * (rollAngle  - gyrX * dt) + (1.0f - BETA_COMP) * accAngleXFil;
   pitchAngle = BETA_COMP * (pitchAngle + gyrY * dt) + (1.0f - BETA_COMP) * accAngleYFil;
 
-  UpdateWeaponFromRoll();
+  UpdateWeaponFromPitch();
 }
 
-// Cambio de arma por giro del brazo. Gesto "inclinar y volver al centro":
-// mientras el gesto este armado, pasar +UMBRAL avanza un arma y pasar -UMBRAL
-// retrocede. Tras contar un cambio el gesto se desarma y solo vuelve a armarse
-// cuando el roll regresa a la banda central (|roll| < REARM). Asi un giro
-// cuenta como un solo cambio, sin ciclado descontrolado al mantener la mano
-// girada. El indice da la vuelta (wrap) sobre WEAPON_COUNT armas.
-void UpdateWeaponFromRoll()
+// Cambio de arma por giro del control. Girar a la izquierda marca pitch
+// positivo y girar a la derecha pitch negativo. Gesto "inclinar y volver al
+// centro": mientras el gesto este armado, pasar +UMBRAL avanza un arma y pasar
+// -UMBRAL retrocede. Tras contar un cambio el gesto se desarma y solo vuelve a
+// armarse cuando el pitch regresa a la banda central (|pitch| < REARM). Asi un
+// giro cuenta como un solo cambio, sin ciclado descontrolado al mantener el
+// control girado. El indice da la vuelta (wrap) sobre WEAPON_COUNT armas.
+void UpdateWeaponFromPitch()
 {
-#if WEAPON_ROLL_INVERT
+#if WEAPON_PITCH_INVERT
   const int dir = -1;
 #else
   const int dir = 1;
@@ -84,18 +85,18 @@ void UpdateWeaponFromRoll()
 
   if (weaponGestureArmed)
   {
-    if (rollAngle >= WEAPON_ROLL_THRESHOLD)
+    if (pitchAngle >= WEAPON_PITCH_THRESHOLD)
     {
       weaponIndex = (weaponIndex + dir + WEAPON_COUNT) % WEAPON_COUNT;
       weaponGestureArmed = false;
     }
-    else if (rollAngle <= -WEAPON_ROLL_THRESHOLD)
+    else if (pitchAngle <= -WEAPON_PITCH_THRESHOLD)
     {
       weaponIndex = (weaponIndex - dir + WEAPON_COUNT) % WEAPON_COUNT;
       weaponGestureArmed = false;
     }
   }
-  else if (fabsf(rollAngle) < WEAPON_ROLL_REARM)
+  else if (fabsf(pitchAngle) < WEAPON_PITCH_REARM)
   {
     weaponGestureArmed = true;
   }

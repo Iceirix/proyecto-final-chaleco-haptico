@@ -19,6 +19,16 @@ void InitPeltier()
 
 void UpdatePeltier()
 {
+  // Pulsos automaticos por vida baja: con 0 < HP < PELTIER_LOW_HP_THRESHOLD la
+  // celda pulsa sola cada PELTIER_PULSE_MS + PELTIER_LOW_HP_COOLDOWN_MS. Se
+  // decide aqui con el HP que Unity ya reporta (HP=), sin comandos extra. A
+  // HP=0 (muerto) o recuperado, deja de pulsar.
+  if (healthPercent > 0 && healthPercent < PELTIER_LOW_HP_THRESHOLD &&
+      !peltierActive && (long)(millis() - peltierLowHpNextMs) >= 0)
+  {
+    peltierTrigger = true;
+  }
+
   // Un nuevo golpe se ignora mientras hay uno en curso (no se reinicia el timer).
   if (peltierTrigger && !peltierActive)
   {
@@ -34,5 +44,8 @@ void UpdatePeltier()
   {
     digitalWrite(PELTIER_RELAY_PIN, LOW);
     peltierActive = false;
+    // Tras cualquier pulso (manual o automatico) los pulsos de vida baja
+    // esperan el cooldown completo, para dejar enfriar la celda.
+    peltierLowHpNextMs = millis() + PELTIER_LOW_HP_COOLDOWN_MS;
   }
 }

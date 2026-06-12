@@ -71,10 +71,14 @@ void StartDamageTap(int zone)
 
 void UpdateVibrationMotors()
 {
-  if (damageZoneTrigger >= 1 && damageZoneTrigger <= 4)
+  if (damageZoneMask != 0)
   {
-    StartDamageTap(damageZoneTrigger);
-    damageZoneTrigger = 0;
+    // El comando HIT puede traer varias zonas a la vez (dano direccional).
+    for (int z = 1; z <= 4; z++)
+    {
+      if (damageZoneMask & (1 << (z - 1))) StartDamageTap(z);
+    }
+    damageZoneMask = 0;
   }
 
   unsigned long now = millis();

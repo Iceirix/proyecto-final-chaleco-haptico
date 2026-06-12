@@ -2,36 +2,6 @@
 //  Inputs.ino - Lectura de botones, joysticks y sensor de flexion.
 // ============================================================================
 
-void InitInputs()
-{
-  const int samples = 80;
-  long acc = 0;
-
-  delay(100);
-  for (int i = 0; i < samples; i++)
-  {
-    acc += analogRead(FLEX_PIN);
-    delay(2);
-  }
-
-  flexRestValue = acc / samples;
-  // Umbral relativo al reposo medido al arrancar. Con el divisor de la PCB
-  // (flex a 3.3V, 1k a GND) el sensor lee ~0 en reposo y sube al doblar.
-#if FLEX_TRIGGER_WHEN_BELOW
-  flexTriggerThreshold = flexRestValue - FLEX_TRIGGER_DELTA;
-  if (flexTriggerThreshold < FLEX_TRIGGER_MIN_THRESHOLD)
-  {
-    flexTriggerThreshold = FLEX_TRIGGER_MIN_THRESHOLD;
-  }
-#else
-  flexTriggerThreshold = flexRestValue + FLEX_TRIGGER_DELTA;
-  if (flexTriggerThreshold > 4095 - FLEX_TRIGGER_HYSTERESIS)
-  {
-    flexTriggerThreshold = 4095 - FLEX_TRIGGER_HYSTERESIS;
-  }
-#endif
-}
-
 void ReadInputs()
 {
   jump = digitalRead(JUMP_PIN);

@@ -40,7 +40,6 @@ void setup()
   Serial.begin(115200);
 
   InitPinout();
-  InitInputs();
   InitVibrationMotors();
   InitSolenoid();
   InitPeltier();

@@ -346,7 +346,7 @@ static void SendDashboardFrame()
 
   // Zona de dano con un toque en curso: se mantiene mientras dura el patron
   // (~400 ms), asi el navegador alcanza a verla y dispara el flash una vez.
-  // No se puede usar damageZoneTrigger: UpdateVibrationMotors ya lo limpio.
+  // No se puede usar damageZoneMask: UpdateVibrationMotors ya lo limpio.
   int dmgZone = activeDamageZone;
 
   char buf[520];
