@@ -73,6 +73,7 @@ using System.Net.Sockets;
 				socketReady = true; //Si todo funciona bien el socket est� listo
 				CheckingMainThread();
 				secondaryThread = new Thread(RecieveData);
+				secondaryThread.IsBackground = true; //No impide cerrar la app si sigue bloqueado en ReadLine
 				secondaryThread.Start();
 				print("Conectado Correctamente");
 			}
@@ -94,56 +95,59 @@ using System.Net.Sockets;
 
 		void RecieveData()
 		{
-			while (true)
+			// Lectura bloqueante pura: ReadLine() despierta al hilo en cuanto la ESP
+			// manda una linea y los estaticos se actualizan al instante.
+			//
+			// NO reintroducir el patron viejo (DataAvailable + Sleep + Send), que era
+			// la causa del delay y de los inputs estancados:
+			//  - DataAvailable solo ve el socket; StreamReader bufferiza ~1 KB (~25
+			//    tramas = 500 ms) y esas lineas quedaban atoradas hasta que llegaban
+			//    bytes nuevos -> Unity consumia inputs viejos.
+			//  - Thread.Sleep(1) en Windows duerme ~15.6 ms reales -> tope ~64
+			//    lineas/s contra las 50/s de la ESP, sin margen.
+			//  - mainThread.Send() bloqueaba el hilo de red esperando al hilo
+			//    principal por cada linea -> la recepcion quedaba atada a los FPS.
+			try
 			{
-				if (abort)
+				while (!abort)
 				{
-					secondaryThread.Abort();
-					break;
-				}
+					string line = streamReader.ReadLine();
 
-				if (!socketReady)
-				{
-					return;
-				}
+					if (line == null) { break; } //La ESP cerro la conexion
 
-				if (networkStream.DataAvailable)
-				{
-					recievedData = streamReader.ReadLine();
+					recievedData = line;
 
-                if (recievedData == null) { continue; }
+					// CSV de la ESP (ver ProtocolSend.ino):
+					//   jump,shoot,weapon,vrx1,vry1,vrx2,vry2,flex,roll,pitch
+					//     0    1     2      3    4    5    6    7    8    9
+					string[] datos = line.Split(',');
 
-                // CSV de la ESP (ver ProtocolSend.ino):
-                //   jump,shoot,weapon,vrx1,vry1,vrx2,vry2,flex,roll,pitch
-                //     0    1     2      3    4    5    6    7    8    9
-                string[] datos = recievedData.Split(',');
-
-                if (datos.Length >= 7)
-                {
-                    Jump = datos[0] == "1";
-                    Shoot = datos[1] == "1";
-
-                    int.TryParse(datos[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out Weapon);
-
-                    float.TryParse(datos[3], NumberStyles.Float, CultureInfo.InvariantCulture, out J1X);
-                    float.TryParse(datos[4], NumberStyles.Float, CultureInfo.InvariantCulture, out J1Y);
-
-                    float.TryParse(datos[5], NumberStyles.Float, CultureInfo.InvariantCulture, out J2X);
-                    float.TryParse(datos[6], NumberStyles.Float, CultureInfo.InvariantCulture, out J2Y);
-                }
-                // Sin Debug.Log aqui: a 50 Hz el log satura la consola y roba
-                // tiempo del hilo de recepcion (anade latencia a los inputs).
-
-                mainThread.Send((object state) =>
+					if (datos.Length >= 7)
 					{
-						if (WhenReceiveDataCall != null)
-						{
-							WhenReceiveDataCall(recievedData);
-						}
-					}, null);
-				}
+						Jump = datos[0] == "1";
+						Shoot = datos[1] == "1";
 
-				Thread.Sleep(1);
+						int.TryParse(datos[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out Weapon);
+
+						float.TryParse(datos[3], NumberStyles.Float, CultureInfo.InvariantCulture, out J1X);
+						float.TryParse(datos[4], NumberStyles.Float, CultureInfo.InvariantCulture, out J1Y);
+
+						float.TryParse(datos[5], NumberStyles.Float, CultureInfo.InvariantCulture, out J2X);
+						float.TryParse(datos[6], NumberStyles.Float, CultureInfo.InvariantCulture, out J2Y);
+					}
+					// Sin Debug.Log aqui: a 50 Hz el log satura la consola y roba
+					// tiempo del hilo de recepcion (anade latencia a los inputs).
+
+					if (WhenReceiveDataCall != null)
+					{
+						//Post no bloquea: encola en el hilo principal y sigue leyendo
+						mainThread.Post((object state) => { WhenReceiveDataCall?.Invoke(line); }, null);
+					}
+				}
+			}
+			catch (Exception)
+			{
+				//Socket cerrado (CloseSocket) o conexion caida: el hilo termina
 			}
 		}
 

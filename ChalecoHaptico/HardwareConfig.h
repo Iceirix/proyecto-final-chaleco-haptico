@@ -91,11 +91,11 @@
 // umbral; pon esto en 1 si se cambia el sensor por uno que lea al reves.
 #define FLEX_TRIGGER_WHEN_BELOW 0
 
-// Cambio de arma por giro del control: pitch positivo (girar a la izquierda)
-// avanza un arma y pitch negativo (girar a la derecha) retrocede. Pon esto en
-// 1 si en el control el gesto queda invertido. Umbral y banda de rearmado se
-// ajustan en GlobalState.h tras pruebas.
-#define WEAPON_PITCH_INVERT 0
+// Cambio de arma por giro del control. Con INVERT=1 (actual): pitch positivo
+// (girar a la izquierda) RETROCEDE un arma y pitch negativo (girar a la
+// derecha) AVANZA. Pon esto en 0 para el sentido contrario. Umbral y banda de
+// rearmado se ajustan en GlobalState.h tras pruebas.
+#define WEAPON_PITCH_INVERT 1
 
 // Dashboard web embebido. Usa un puerto distinto al TCP de Unity para no
 // interferir con la comunicacion del videojuego.
