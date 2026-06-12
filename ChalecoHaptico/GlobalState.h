@@ -33,7 +33,7 @@ unsigned long dashboardLastMs = 0;
 // Inputs.
 bool jump = false;
 bool shoot = false;
-bool pb2Reserved = false;   // PB2 libre: reservado para accion futura
+bool pb2Reserved = false;   // PB2: recarga manual de municion (se envia a Unity)
 bool pb3Reserved = false;
 bool pb4Reserved = false;
 

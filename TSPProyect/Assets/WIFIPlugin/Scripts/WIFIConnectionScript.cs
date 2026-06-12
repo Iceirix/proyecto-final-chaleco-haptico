@@ -17,6 +17,7 @@ using System.Net.Sockets;
 		public static float J2Y;
 		public static bool Jump;
 		public static bool Shoot;
+		public static bool Button2; // PB2: recarga manual (ver ReloadScript)
 		public static int Weapon;   // indice de arma 0..3 que manda la ESP (gesto IMU)
 
 		public static float CAMX;
@@ -118,8 +119,8 @@ using System.Net.Sockets;
 					recievedData = line;
 
 					// CSV de la ESP (ver ProtocolSend.ino):
-					//   jump,shoot,weapon,vrx1,vry1,vrx2,vry2,flex,roll,pitch
-					//     0    1     2      3    4    5    6    7    8    9
+					//   jump,shoot,weapon,vrx1,vry1,vrx2,vry2,flex,roll,pitch,btn2
+					//     0    1     2      3    4    5    6    7    8    9    10
 					string[] datos = line.Split(',');
 
 					if (datos.Length >= 7)
@@ -134,6 +135,12 @@ using System.Net.Sockets;
 
 						float.TryParse(datos[5], NumberStyles.Float, CultureInfo.InvariantCulture, out J2X);
 						float.TryParse(datos[6], NumberStyles.Float, CultureInfo.InvariantCulture, out J2Y);
+					}
+
+					// btn2 (PB2) va al final; guardado para firmware viejo sin el campo.
+					if (datos.Length >= 11)
+					{
+						Button2 = datos[10] == "1";
 					}
 					// Sin Debug.Log aqui: a 50 Hz el log satura la consola y roba
 					// tiempo del hilo de recepcion (anade latencia a los inputs).

@@ -61581,7 +61581,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13891d26cc3b61d4a9653525ce8d1bc0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 50
+  health: 100
   lifeBarImage: {fileID: 261722343}
   hitClip: {fileID: 8300000, guid: 59211938fc8504d538f457e601f9cfb7, type: 3}
 --- !u!114 &8209512827188551769 stripped
